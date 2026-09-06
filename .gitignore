@@ -1,0 +1,21 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+
+# 测试产物（截图与临时夹具由脚本生成，不入库）
+e2e/artifacts/
+
+# 日志
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 本地环境配置
+.env.local
+.env.*.local

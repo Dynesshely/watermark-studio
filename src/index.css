@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 原生滑块统一强调色 */
+input[type='range'] {
+  accent-color: #4f46e5;
+}
+
+/* 细滚动条 */
+.nice-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 163 184 / 0.6) transparent;
+}
+.nice-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.nice-scroll::-webkit-scrollbar-thumb {
+  background: rgb(148 163 184 / 0.55);
+  border-radius: 8px;
+}
+.nice-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 预览区透明棋盘格背景（便于查看 PNG 透明区域） */
+.checker {
+  background-color: #e2e8f0;
+  background-image: conic-gradient(#cbd5e1 25%, transparent 0 50%, #cbd5e1 0 75%, transparent 0);
+  background-size: 24px 24px;
+}
+.dark .checker {
+  background-color: #1e293b;
+  background-image: conic-gradient(#334155 25%, transparent 0 50%, #334155 0 75%, transparent 0);
+}
