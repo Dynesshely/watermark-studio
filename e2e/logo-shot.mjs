@@ -1,5 +1,5 @@
 /**
- * LOGO 视觉检查截图：favicon 各尺寸渲染 + 顶栏品牌区（浅色/深色）
+ * 品牌区 / LOGO / 关于弹窗 视觉检查截图
  * 用法：node e2e/logo-shot.mjs [baseURL]
  */
 import { chromium } from 'playwright'
@@ -13,7 +13,7 @@ mkdirSync(ART, { recursive: true })
 
 const browser = await chromium.launch()
 try {
-  const page = await browser.newPage({ viewport: { width: 1400, height: 320 } })
+  const page = await browser.newPage({ viewport: { width: 1400, height: 900 } })
 
   // 1) favicon 多尺寸渲染（用 setContent 精确控制尺寸）
   await page.goto(BASE, { waitUntil: 'networkidle' })
@@ -28,15 +28,34 @@ try {
   await page.waitForTimeout(400)
   await page.screenshot({ path: join(ART, 'logo-sizes.png') })
 
-  // 2) 应用页顶栏（浅色）
+  const brand = page.getByRole('button', { name: /关于/ })
+
+  // 2) 品牌区 hover 态（浅色）
   await page.goto(BASE, { waitUntil: 'networkidle' })
   await page.waitForTimeout(300)
-  await page.screenshot({ path: join(ART, 'logo-topbar-light.png') })
+  await brand.hover()
+  await page.waitForTimeout(250)
+  await page.screenshot({ path: join(ART, 'brand-hover-light.png'), clip: { x: 0, y: 0, width: 640, height: 52 } })
 
-  // 3) 顶栏（深色）
-  await page.evaluate(() => document.documentElement.classList.add('dark'))
+  // 3) 关于弹窗（浅色）
+  await brand.click()
+  await page.waitForSelector('[role="dialog"]')
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: join(ART, 'about-light.png') })
+  await page.keyboard.press('Escape')
   await page.waitForTimeout(300)
-  await page.screenshot({ path: join(ART, 'logo-topbar-dark.png') })
+
+  // 4) 关于弹窗（深色）+ 品牌区 hover 态
+  await page.evaluate(() => document.documentElement.classList.add('dark'))
+  await page.waitForTimeout(200)
+  await brand.hover()
+  await page.waitForTimeout(200)
+  await page.screenshot({ path: join(ART, 'brand-hover-dark.png'), clip: { x: 0, y: 0, width: 640, height: 52 } })
+  await brand.click()
+  await page.waitForSelector('[role="dialog"]')
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: join(ART, 'about-dark.png') })
+  await page.keyboard.press('Escape')
 
   console.log('done')
 } finally {

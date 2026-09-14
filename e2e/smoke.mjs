@@ -109,6 +109,51 @@ try {
   check('html.dark 生效', await page.evaluate(() => document.documentElement.classList.contains('dark')))
   await page.getByTitle('浅色主题').click()
 
+  console.log('· 品牌区交互与「关于」弹窗')
+  const brand = page.getByRole('button', { name: /关于/ })
+  const brandBox = await brand.boundingBox()
+  check('品牌区是可点击控件', !!brandBox && brandBox.width > 100, JSON.stringify(brandBox))
+  const bgIdle = await brand.evaluate((el) => getComputedStyle(el).backgroundColor)
+  await brand.hover()
+  await page.waitForTimeout(200)
+  const bgHover = await brand.evaluate((el) => getComputedStyle(el).backgroundColor)
+  check('hover 时显现交互区域（背景变化）', bgIdle !== bgHover, `${bgIdle} → ${bgHover}`)
+
+  await brand.click()
+  await page.waitForSelector('[role="dialog"]', { timeout: 5000 })
+  const dlgBox = await page.locator('[role="dialog"]').boundingBox()
+  check(
+    '弹窗完整位于视口内（未被顶栏 backdrop-filter 裁切）',
+    !!dlgBox && dlgBox.y > 10 && dlgBox.y + dlgBox.height < 900,
+    JSON.stringify(dlgBox),
+  )
+  const backdropBox = await page.locator('[role="dialog"]').evaluate((el) => {
+    const bd = el.parentElement
+    const r = bd.getBoundingClientRect()
+    return {
+      w: Math.round(r.width),
+      h: Math.round(r.height),
+      parent: bd.parentElement ? bd.parentElement.tagName : '',
+    }
+  })
+  check(
+    '遮罩覆盖整个视口并挂在 body 上',
+    backdropBox.w === 1440 && backdropBox.h === 900 && backdropBox.parent === 'BODY',
+    JSON.stringify(backdropBox),
+  )
+  check('弹窗显示版本号', (await page.getByText(/^v\d+\.\d+\.\d+$/).count()) > 0)
+  await page.screenshot({ path: join(ART, '05-about.png') })
+
+  await page.keyboard.press('Escape')
+  await page.waitForTimeout(250)
+  check('Esc 可关闭弹窗', (await page.locator('[role="dialog"]').count()) === 0)
+
+  await brand.click()
+  await page.waitForSelector('[role="dialog"]')
+  await page.mouse.click(40, 780)
+  await page.waitForTimeout(250)
+  check('点击遮罩可关闭弹窗', (await page.locator('[role="dialog"]').count()) === 0)
+
   console.log('· 上传两张图片')
   await page.setInputFiles('input[type="file"]', [f1, f2])
   await page.getByText(/已添加 2 张图片/).waitFor({ timeout: 8000 })
@@ -116,8 +161,9 @@ try {
   check('列表出现 2 张卡片', cardCount === 2, `actual=${cardCount}`)
   await page.waitForFunction(
     () => {
+      // 精确等待全分辨率绘制完成：canvas 元素在 rAF 首帧前是默认 300×150
       const c = document.querySelector('canvas')
-      return !!c && c.width > 0 && c.height > 0
+      return !!c && c.width === 900 && c.height === 600
     },
     undefined,
     { timeout: 10000 },

@@ -35,6 +35,42 @@ input[type='range'] {
   background: transparent;
 }
 
+/* 模态弹窗入场动画（尊重「减少动态效果」偏好） */
+@keyframes wm-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes wm-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.wm-modal-backdrop {
+  animation: wm-fade-in 0.15s ease-out;
+}
+
+.wm-modal-panel {
+  animation: wm-pop-in 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wm-modal-backdrop,
+  .wm-modal-panel {
+    animation: none;
+  }
+}
+
 /* 预览区透明棋盘格背景（便于查看 PNG 透明区域） */
 .checker {
   background-color: #e2e8f0;
