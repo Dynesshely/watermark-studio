@@ -30,6 +30,9 @@ pnpm install
 pnpm dev        # http://<本机IP>:50011（同时监听 0.0.0.0，局域网设备可直接访问）
 ```
 
+自定义域名访问：`http://watermark-studio.dev-u26-001.services.local:50011`
+Vite 会校验 Host 头，新增域名须列入 `vite.config.ts` 顶部的 `ALLOWED_HOSTS`（`server` 与 `preview` 共用），否则返回 403。
+
 ## 构建
 
 ```bash
