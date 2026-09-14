@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import type { ThemePref } from '../lib/types'
 import { useSettings } from '../store/settings'
 import { Button, Icon, Segmented } from './ui'
+import { Logo } from './Logo'
 
 export function TopBar({ onPick, onPaste }: { onPick: (files: File[]) => void; onPaste: () => void }) {
   const { s, set } = useSettings()
@@ -10,9 +11,7 @@ export function TopBar({ onPick, onPaste }: { onPick: (files: File[]) => void; o
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-slate-200/80 bg-white/80 px-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/70">
       <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white shadow-sm">
-          W
-        </span>
+        <Logo className="h-7 w-7 drop-shadow-sm" />
         <div className="leading-tight">
           <h1 className="text-sm font-semibold text-slate-800 dark:text-slate-100">水印工坊</h1>
           <p className="hidden text-[10px] text-slate-400 sm:block dark:text-slate-500">
