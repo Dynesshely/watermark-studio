@@ -27,14 +27,7 @@ export function TopBar({ onPick, onPaste }: { onPick: (files: File[]) => void; o
           className="group -ml-1 flex items-center gap-2 rounded-xl px-1.5 py-1 text-left ring-1 ring-transparent transition-colors hover:bg-slate-100 hover:ring-slate-200/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:bg-slate-200/70 dark:hover:bg-slate-800/70 dark:hover:ring-slate-700 dark:active:bg-slate-700/60"
         >
           <Logo className="h-7 w-7 drop-shadow-sm" />
-          <span className="leading-tight">
-            <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">
-              水印工坊
-            </span>
-            <span className="hidden text-[10px] text-slate-400 sm:block dark:text-slate-500">
-              图片水印 · 完全在本地浏览器处理
-            </span>
-          </span>
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">水印工坊</span>
           <Icon
             name="info"
             className="h-3.5 w-3.5 shrink-0 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 dark:text-slate-600"
