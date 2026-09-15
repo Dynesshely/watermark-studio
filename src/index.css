@@ -71,6 +71,21 @@ input[type='range'] {
   }
 }
 
+/* 欢迎卡片底部装饰：与品牌 LOGO 同源的斜向水印条纹 + 右下柔光，向上渐隐 */
+.wm-hero-decor {
+  background-image:
+    repeating-linear-gradient(115deg, rgb(99 102 241 / 0.13) 0 5px, transparent 5px 24px),
+    radial-gradient(120% 100% at 100% 100%, rgb(139 92 246 / 0.16), transparent 70%);
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 90%);
+  mask-image: linear-gradient(to top, #000 0%, transparent 90%);
+}
+
+.dark .wm-hero-decor {
+  background-image:
+    repeating-linear-gradient(115deg, rgb(129 140 248 / 0.14) 0 5px, transparent 5px 24px),
+    radial-gradient(120% 100% at 100% 100%, rgb(139 92 246 / 0.24), transparent 70%);
+}
+
 /* 预览区透明棋盘格背景（便于查看 PNG 透明区域） */
 .checker {
   background-color: #e2e8f0;
