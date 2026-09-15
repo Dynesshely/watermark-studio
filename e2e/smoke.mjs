@@ -178,12 +178,43 @@ try {
   await page.waitForTimeout(250)
   check('点击遮罩可关闭弹窗', (await page.locator('[role="dialog"]').count()) === 0)
 
+  // 焦点陷阱：Tab / Shift+Tab 都不应跑出弹窗
+  await brand.click()
+  await page.waitForSelector('[role="dialog"]')
+  await page.waitForTimeout(200)
+  const forwardTrap = []
+  for (let i = 0; i < 10; i++) {
+    await page.keyboard.press('Tab')
+    forwardTrap.push(await page.evaluate(() => (document.activeElement?.closest('[role="dialog"]') ? 1 : 0)))
+  }
+  check('Tab 焦点被限制在弹窗内', forwardTrap.every((x) => x === 1), forwardTrap.join(''))
+  const backwardTrap = []
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press('Shift+Tab')
+    backwardTrap.push(await page.evaluate(() => (document.activeElement?.closest('[role="dialog"]') ? 1 : 0)))
+  }
+  check('Shift+Tab 焦点同样不逃出弹窗', backwardTrap.every((x) => x === 1), backwardTrap.join(''))
+  await page.keyboard.press('Escape')
+  await page.waitForTimeout(200)
+
   console.log('· 待命界面：整卡可点击，内层按钮不误触')
+  // 内容层是 pointer-events-none，真实鼠标点击会穿透到覆盖整卡的按钮上；
+  // 用坐标点击来模拟真实行为（Playwright 的 locator.click 会因 actionability 拒绝点击该层）
+  const headBox = await page.getByRole('heading', { name: /把图片拖到这里/ }).boundingBox()
   const chooserPromise = page.waitForEvent('filechooser', { timeout: 5000 })
-  await page.getByRole('heading', { name: /把图片拖到这里/ }).click()
+  await page.mouse.click(headBox.x + headBox.width / 2, headBox.y + headBox.height / 2)
   const chooser = await chooserPromise
   check('点击卡片任意位置即可打开文件选择', !!chooser)
   await chooser.setFiles([])
+
+  // 键盘路径：整卡覆盖按钮可聚焦，Enter 打开文件选择
+  const overlayBtn = page.locator('button[aria-label="选择图片"]')
+  await overlayBtn.focus()
+  const kbChooserPromise = page.waitForEvent('filechooser', { timeout: 5000 })
+  await page.keyboard.press('Enter')
+  const kbChooser = await kbChooserPromise
+  check('键盘 Enter 可打开文件选择', !!kbChooser)
+  await kbChooser.setFiles([])
 
   let strayChooser = false
   const onStrayChooser = () => {
@@ -291,6 +322,20 @@ try {
     return [c.width, c.height]
   })
   check('主预览全分辨率解码 (900×600)', dims[0] === 900 && dims[1] === 600, `actual=${dims}`)
+
+  console.log('· 预览键盘快捷键')
+  const zoomLabel = () => page.locator('span.tabular-nums').first().textContent()
+  const fitZoom = await zoomLabel()
+  await page.keyboard.press('=')
+  await page.waitForTimeout(200)
+  const zoomedIn = await zoomLabel()
+  check('“+” 放大预览', zoomedIn !== fitZoom, `${fitZoom} → ${zoomedIn}`)
+  await page.keyboard.press('-')
+  await page.waitForTimeout(200)
+  check('“-” 缩小预览', (await zoomLabel()) !== zoomedIn, `${zoomedIn} → ${await zoomLabel()}`)
+  await page.keyboard.press('=').then(() => page.keyboard.press('0'))
+  await page.waitForTimeout(200)
+  check('“0” 恢复适应窗口', (await zoomLabel()) === fitZoom, `→ ${await zoomLabel()}`)
 
   console.log('· 列表底部操作条：新建图片 / 打开 / 粘贴')
   const visibleList = page.locator('[data-testid="image-list"]:visible')

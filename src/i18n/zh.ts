@@ -230,6 +230,7 @@ export const zh = {
   'about.sc.paste': '粘贴图片',
   'about.sc.pasteNote': '（焦点不在输入框时）',
   'about.sc.zoom': '缩放预览',
+  'about.sc.zoomKeys': '缩放 / 适配',
   'about.sc.close': '关闭弹窗',
   'about.kbd.wheel': '滚轮',
   'about.specs': '规格与边界',

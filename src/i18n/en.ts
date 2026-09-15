@@ -233,6 +233,7 @@ export const en: Dict = {
   'about.sc.paste': 'Paste image',
   'about.sc.pasteNote': '(when focus is not in an input)',
   'about.sc.zoom': 'Zoom preview',
+  'about.sc.zoomKeys': 'Zoom / fit view',
   'about.sc.close': 'Close dialog',
   'about.kbd.wheel': 'Wheel',
   'about.specs': 'Specs & limits',

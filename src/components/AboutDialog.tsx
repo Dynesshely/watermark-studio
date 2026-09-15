@@ -100,6 +100,9 @@ export function AboutDialog({ open, onClose }: { open: boolean; onClose: () => v
           <Row label={t('about.sc.zoom')}>
             <Kbd>Ctrl</Kbd> / <Kbd>⌘</Kbd> + <Kbd>{t('about.kbd.wheel')}</Kbd>
           </Row>
+          <Row label={t('about.sc.zoomKeys')}>
+            <Kbd>+</Kbd> / <Kbd>−</Kbd> / <Kbd>0</Kbd>
+          </Row>
           <Row label={t('about.sc.close')}>
             <Kbd>Esc</Kbd>
           </Row>

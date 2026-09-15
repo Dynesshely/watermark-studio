@@ -22,8 +22,11 @@ function Kbd({ children }: { children: ReactNode }) {
 }
 
 /**
- * 待命界面（欢迎页）：左侧文案 + 右侧竖排动作 + 底部页脚条；整卡即拖放/点击区。
- * 版面参照手绘稿：LOGO 居左上、标题与说明左对齐、动作按钮竖排在右、底部一整条页脚。
+ * 待命界面（欢迎页）：左侧文案 + 右侧竖排动作 + 左下能力清单 + 右下背景装饰。
+ *
+ * 整卡即拖放/点击区：卡片内铺一层覆盖整卡的透明按钮承担点击与键盘操作
+ * （内容层 pointer-events-none，仅动作按钮 pointer-events-auto）。
+ * 这样既保留"点哪里都能选文件"，又不会出现「按钮里套按钮」的语义问题。
  */
 export function Hero({
   onPick,
@@ -41,17 +44,22 @@ export function Hero({
 
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center p-4 sm:p-6">
-      <div
-        onClick={openPicker}
-        className="group relative w-full max-w-3xl cursor-pointer overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-white/70 px-6 py-8 text-left shadow-sm transition-colors hover:border-indigo-400 hover:bg-white/90 sm:px-10 sm:py-10 dark:border-slate-700 dark:bg-slate-900/40 dark:hover:border-indigo-500/70 dark:hover:bg-slate-900/70"
-      >
+      <div className="group relative w-full max-w-3xl overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-white/70 px-6 py-8 text-left shadow-sm transition-colors hover:border-indigo-400 hover:bg-white/90 sm:px-10 sm:py-10 dark:border-slate-700 dark:bg-slate-900/40 dark:hover:border-indigo-500/70 dark:hover:bg-slate-900/70">
         {/* 底部背景装饰（斜向水印条纹 + 柔光，向上渐隐；窄屏内容已占满故不显示） */}
         <span
           aria-hidden="true"
           className="wm-hero-decor pointer-events-none absolute inset-x-0 bottom-0 hidden h-28 md:block"
         />
 
-        <div className="relative">
+        {/* 整卡点击/键盘入口（透明覆盖层） */}
+        <button
+          type="button"
+          onClick={openPicker}
+          aria-label={t('hero.pick')}
+          className="absolute inset-0 z-0 cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset"
+        />
+
+        <div className="pointer-events-none relative z-10">
           {/* 左上角品牌 LOGO */}
           <Logo className="h-14 w-14 drop-shadow-md transition-transform duration-200 group-hover:scale-[1.03]" />
 
@@ -71,53 +79,21 @@ export function Hero({
             </div>
 
             {/* 右侧竖排动作：主操作实心，其余描边 */}
-            <div className="flex w-full shrink-0 flex-col gap-2 md:w-[196px]">
+            <div className="pointer-events-auto flex w-full shrink-0 flex-col gap-2 md:w-[196px]">
               <Button
                 variant="primary"
                 icon="upload"
                 className="h-10 w-full text-sm shadow-sm"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  openPicker()
-                }}
+                onClick={openPicker}
               >
                 {t('hero.pick')}
               </Button>
-              <Button
-                variant="outline"
-                icon="clipboard"
-                className="h-10 w-full text-sm"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onPaste()
-                }}
-              >
+              <Button variant="outline" icon="clipboard" className="h-10 w-full text-sm" onClick={onPaste}>
                 {t('hero.paste')}
               </Button>
-              <Button
-                variant="outline"
-                icon="palette"
-                className="h-10 w-full text-sm"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onNewColor()
-                }}
-              >
+              <Button variant="outline" icon="palette" className="h-10 w-full text-sm" onClick={onNewColor}>
                 {t('hero.color')}
               </Button>
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/bmp,.jpg,.jpeg,.png,.webp,.bmp"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files.length > 0) {
-                    onPick(Array.from(e.target.files))
-                    e.target.value = ''
-                  }
-                }}
-              />
             </div>
           </div>
 
@@ -127,6 +103,22 @@ export function Hero({
             {CAPABILITIES.map((k) => t(k)).join(' · ')}
           </p>
         </div>
+
+        {/* 文件输入必须放在 pointer-events-none 的内容层之外：
+            否则程序化 click() 不会弹出文件选择框（会连带影响「选择图片」按钮） */}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/bmp,.jpg,.jpeg,.png,.webp,.bmp"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files && e.target.files.length > 0) {
+              onPick(Array.from(e.target.files))
+              e.target.value = ''
+            }
+          }}
+        />
       </div>
     </div>
   )

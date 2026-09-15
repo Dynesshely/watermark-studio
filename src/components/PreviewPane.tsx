@@ -223,6 +223,37 @@ export function PreviewPane({ item, src, loading }: PreviewPaneProps) {
     })
   }, [])
 
+  // 键盘快捷键：+ / − 缩放，0 或 F 适应窗口。
+  // 输入框聚焦时、或弹窗打开时不拦截（避免与输入/弹窗交互冲突）。
+  useEffect(() => {
+    if (!src) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (document.querySelector('[role="dialog"]')) return
+      const el = document.activeElement
+      if (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement ||
+        (el instanceof HTMLElement && el.isContentEditable)
+      ) {
+        return
+      }
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault()
+        zoomBy(1.25)
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault()
+        zoomBy(1 / 1.25)
+      } else if (e.key === '0' || e.key === 'f' || e.key === 'F') {
+        e.preventDefault()
+        setScale(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [src, zoomBy])
+
   const zoomPctLabel = displayScale > 0 ? `${Math.round(displayScale * 100)}%` : '—'
 
   return (
