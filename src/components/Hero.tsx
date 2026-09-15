@@ -1,7 +1,30 @@
-import { useRef } from 'react'
+import { useRef, type ReactNode } from 'react'
+import type { DictKey } from '../i18n'
 import { useI18n } from '../store/i18n'
 import { Button, Icon } from './ui'
+import { Logo } from './Logo'
 
+/** 能力清单（卡片页脚，以 · 分隔为一行，避免多个 pill 换行造成的视觉不平衡） */
+const CAPABILITIES: DictKey[] = [
+  'hero.chip.formats',
+  'hero.chip.text',
+  'hero.chip.batch',
+  'hero.chip.preset',
+  'hero.chip.export',
+]
+
+function Kbd({ children }: { children: ReactNode }) {
+  return (
+    <kbd className="rounded border border-slate-300 bg-slate-100 px-1 py-px font-sans text-[10px] text-slate-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400">
+      {children}
+    </kbd>
+  )
+}
+
+/**
+ * 待命界面（欢迎页）：整卡即拖放/点击区，与文案「把图片拖到这里，或点击选择文件」一致。
+ * 排版层级：品牌 LOGO → 主标题 → 隐私说明 → 主次分明的三个入口 → 快捷键提示 → 能力清单页脚。
+ */
 export function Hero({
   onPick,
   onPaste,
@@ -14,37 +37,58 @@ export function Hero({
 }) {
   const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const openPicker = () => inputRef.current?.click()
 
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center p-6">
-      <div className="w-full max-w-2xl rounded-2xl border-2 border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/50 sm:px-12">
-        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/25">
-          <Icon name="image" className="h-8 w-8" />
-        </span>
-        <h2 className="mt-5 text-lg font-semibold text-slate-800 dark:text-slate-100">
+    <div className="flex min-h-0 flex-1 items-center justify-center p-4 sm:p-6">
+      <div
+        onClick={openPicker}
+        className="group w-full max-w-xl cursor-pointer rounded-2xl border border-dashed border-slate-300 bg-white/70 px-6 py-12 text-center shadow-sm transition-colors hover:border-indigo-400 hover:bg-white/90 sm:px-10 dark:border-slate-700 dark:bg-slate-900/40 dark:hover:border-indigo-500/70 dark:hover:bg-slate-900/70"
+      >
+        {/* 品牌 LOGO（本身就是「圆角渐变方块 + 照片水印标记」，与 favicon 同源） */}
+        <Logo className="mx-auto h-16 w-16 drop-shadow-md transition-transform duration-200 group-hover:scale-[1.03]" />
+
+        <h2 className="mt-6 text-xl font-semibold tracking-tight text-slate-800 sm:text-2xl dark:text-slate-100">
           {t('hero.headline')}
         </h2>
-        <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-          <Icon name="shield" className="h-3.5 w-3.5 text-emerald-500" />
+
+        <p className="mx-auto mt-3 flex max-w-md items-center justify-center gap-1.5 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+          <Icon name="shield" className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
           {t('hero.privacy')}
         </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+
+        {/* 主次分明：主操作为实心按钮，其余两个为描边按钮 */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5">
           <Button
             variant="primary"
             icon="upload"
-            className="h-9 px-5 text-sm"
-            onClick={() => inputRef.current?.click()}
+            className="h-10 px-5 text-sm shadow-sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              openPicker()
+            }}
           >
             {t('hero.pick')}
           </Button>
-          <Button variant="outline" icon="clipboard" className="h-9 px-5 text-sm" onClick={onPaste}>
+          <Button
+            variant="outline"
+            icon="clipboard"
+            className="h-10 px-5 text-sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              onPaste()
+            }}
+          >
             {t('hero.paste')}
           </Button>
           <Button
             variant="outline"
             icon="palette"
-            className="h-9 px-5 text-sm"
-            onClick={onNewColor}
+            className="h-10 px-5 text-sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              onNewColor()
+            }}
           >
             {t('hero.color')}
           </Button>
@@ -62,36 +106,16 @@ export function Hero({
             }}
           />
         </div>
-        <p className="mt-3 text-[11px] text-slate-400 dark:text-slate-500">
-          {t('hero.kbdPrefix')}{' '}
-          <kbd className="rounded border border-slate-300 bg-slate-100 px-1 py-px font-sans text-[10px] dark:border-slate-600 dark:bg-slate-800">
-            Ctrl
-          </kbd>
-          {' + '}
-          <kbd className="rounded border border-slate-300 bg-slate-100 px-1 py-px font-sans text-[10px] dark:border-slate-600 dark:bg-slate-800">
-            V
-          </kbd>{' '}
-          {t('hero.kbdSuffix')}
+
+        <p className="mt-4 text-[11px] text-slate-400 dark:text-slate-500">
+          {t('hero.kbdPrefix')} <Kbd>Ctrl</Kbd> + <Kbd>V</Kbd> {t('hero.kbdSuffix')}
         </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">
-            {t('hero.chip.formats')}
-          </span>
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">
-            {t('hero.chip.text')}
-          </span>
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">
-            {t('hero.chip.batch')}
-          </span>
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">
-            {t('hero.chip.preset')}
-          </span>
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">
-            {t('hero.chip.export')}
-          </span>
-        </div>
+
+        {/* 页脚：能力清单，用分隔符连成一行，比多个胶囊更克制 */}
+        <p className="mx-auto mt-8 max-w-lg border-t border-slate-200/70 pt-4 text-[11px] leading-relaxed text-slate-400 dark:border-slate-800 dark:text-slate-500">
+          {CAPABILITIES.map((k) => t(k)).join(' · ')}
+        </p>
       </div>
     </div>
   )
 }
-

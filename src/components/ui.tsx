@@ -282,7 +282,7 @@ export function Button({
     <button
       type="button"
       className={cx(
-        'inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-40',
+        'inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-40 dark:focus-visible:ring-offset-slate-900',
         BTN_STYLE[variant],
         className,
       )}

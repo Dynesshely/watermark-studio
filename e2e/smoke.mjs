@@ -178,6 +178,26 @@ try {
   await page.waitForTimeout(250)
   check('点击遮罩可关闭弹窗', (await page.locator('[role="dialog"]').count()) === 0)
 
+  console.log('· 待命界面：整卡可点击，内层按钮不误触')
+  const chooserPromise = page.waitForEvent('filechooser', { timeout: 5000 })
+  await page.getByRole('heading', { name: /把图片拖到这里/ }).click()
+  const chooser = await chooserPromise
+  check('点击卡片任意位置即可打开文件选择', !!chooser)
+  await chooser.setFiles([])
+
+  let strayChooser = false
+  const onStrayChooser = () => {
+    strayChooser = true
+  }
+  page.once('filechooser', onStrayChooser)
+  await page.getByRole('button', { name: '从颜色开始' }).click()
+  await page.waitForSelector('[role="dialog"]')
+  await page.waitForTimeout(250)
+  check('内层按钮不会连带触发文件选择', !strayChooser)
+  await page.keyboard.press('Escape')
+  await page.waitForTimeout(200)
+  page.off('filechooser', onStrayChooser)
+
   console.log('· 从颜色开始：纯色底图与透明底图')
   await page.getByRole('button', { name: '从颜色开始' }).click()
   await page.waitForSelector('[role="dialog"]')
