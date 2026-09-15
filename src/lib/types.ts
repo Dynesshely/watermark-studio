@@ -53,8 +53,13 @@ export interface AppSettings {
   jpegQuality: number
   /** 导出文件名模板，支持 {name} {ext} */
   filenameTemplate: string
+  /** 导出时按最长边等比缩小；0 表示保持原尺寸 */
+  exportMaxSide: number
   wm: WmSettings
 }
+
+/** 导出尺寸可选值（0 = 原尺寸） */
+export const EXPORT_MAX_SIDE_OPTIONS = [0, 4096, 2048, 1280, 800]
 
 export const WM_DEFAULTS: WmSettings = {
   mode: 'tile',
@@ -88,6 +93,7 @@ export const APP_DEFAULTS: AppSettings = {
   lang: 'zh',
   jpegQuality: 0.92,
   filenameTemplate: '{name}_wm.{ext}',
+  exportMaxSide: 0,
   wm: WM_DEFAULTS,
 }
 

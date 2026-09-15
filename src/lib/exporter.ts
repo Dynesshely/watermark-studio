@@ -12,6 +12,8 @@ export interface ExportProgress {
   done: number
   total: number
   phase: string
+  /** 预计剩余毫秒数（采到足够样本后才有值） */
+  etaMs?: number
 }
 
 export interface ExportResult {
@@ -21,6 +23,30 @@ export interface ExportResult {
   pngFallbackNames: string[]
   emptyContent: boolean
   bmpNames: string[]
+  /** 用户中途取消 */
+  canceled: boolean
+}
+
+export interface ProcessOptions {
+  /** 返回 true 时停止处理后续图片（已完成的仍会逐张下载；ZIP 不再生成） */
+  shouldCancel?: () => boolean
+}
+
+/** 按最长边等比缩小导出画布（水印已在原尺寸绘制，缩小后比例自动保持） */
+function scaleForExport(canvas: HTMLCanvasElement, maxSide: number): HTMLCanvasElement {
+  if (!maxSide || maxSide <= 0) return canvas
+  const longest = Math.max(canvas.width, canvas.height)
+  if (longest <= maxSide) return canvas
+  const s = maxSide / longest
+  const out = document.createElement('canvas')
+  out.width = Math.max(1, Math.round(canvas.width * s))
+  out.height = Math.max(1, Math.round(canvas.height * s))
+  const ctx = out.getContext('2d')
+  if (!ctx) return canvas
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(canvas, 0, 0, out.width, out.height)
+  return out
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {
@@ -50,6 +76,7 @@ export async function processImages(
   mode: ExportMode,
   targetId: string | null,
   onProgress: (p: ExportProgress) => void,
+  opts: ProcessOptions = {},
 ): Promise<ExportResult> {
   const wm = settings.wm
   const quality = settings.jpegQuality
@@ -61,6 +88,7 @@ export async function processImages(
     pngFallbackNames: [],
     emptyContent: false,
     bmpNames: [],
+    canceled: false,
   }
   if (targets.length === 0) return result
 
@@ -80,20 +108,26 @@ export async function processImages(
 
   const outputs: { blob: Blob; name: string }[] = []
   let done = 0
+  const startedAt = performance.now()
   for (const item of targets) {
+    if (opts.shouldCancel?.()) {
+      result.canceled = true
+      break
+    }
     onProgress({ done, total: targets.length, phase: t('export.busy.processing', { name: item.name }) })
     try {
       const src = await decodeToSource(item.file)
       try {
         const canvas = renderWatermarked(src.el, src.width, src.height, wm, 1)
+        const exportCanvas = scaleForExport(canvas, settings.exportMaxSide)
         const fmt = KIND_EXPORT[item.kind]
         const isLossy = item.kind === 'jpeg' || item.kind === 'webp'
         let mime = fmt.mime
-        let blob: Blob | null = await canvasToBlob(canvas, mime, isLossy ? quality : undefined)
+        let blob: Blob | null = await canvasToBlob(exportCanvas, mime, isLossy ? quality : undefined)
         if (!blob && item.kind === 'webp') {
           // 个别浏览器不支持 WebP 编码 → PNG 兜底
           mime = 'image/png'
-          blob = await canvasToBlob(canvas, mime)
+          blob = await canvasToBlob(exportCanvas, mime)
           result.pngFallbackNames.push(item.name)
         }
         if (!blob) throw new Error(t('err.canvasEncode'))
@@ -110,7 +144,15 @@ export async function processImages(
       result.failed.push({ name: item.name, error: e instanceof Error ? e.message : String(e) })
     }
     done++
-    onProgress({ done, total: targets.length, phase: t('export.busy.processing', { name: item.name }) })
+    // 用已完成图片的平均耗时估算剩余时间
+    const perItem = (performance.now() - startedAt) / Math.max(1, done)
+    const remaining = Math.max(0, targets.length - done) * perItem
+    onProgress({
+      done,
+      total: targets.length,
+      phase: t('export.busy.processing', { name: item.name }),
+      etaMs: done < targets.length ? remaining : 0,
+    })
   }
 
   const names = dedupeNames(outputs.map((o) => o.name))
@@ -119,6 +161,8 @@ export async function processImages(
   })
 
   if (mode === 'zip') {
+    // 取消后不再生成 ZIP（半包意义不大，避免用户误以为包内齐全）
+    if (result.canceled) return result
     onProgress({ done: 0, total: 100, phase: t('export.busy.zipping') })
     const zip = new JSZip()
     for (const o of outputs) zip.file(o.name, o.blob)

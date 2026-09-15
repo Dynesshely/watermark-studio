@@ -72,9 +72,12 @@ function makePng(w, h, pixelFn, path) {
 const f1 = join(ART, 'fixture-a.png')
 const f2 = join(ART, 'fixture-b.png')
 const f3 = join(ART, 'fixture-c.png')
+const f4 = join(ART, 'fixture-big.png')
 makePng(900, 600, (x, y) => [40 + (x / 900) * 200, 60 + (y / 600) * 180, 200 - (x / 900) * 120], f1)
 makePng(640, 480, (x, y) => [220 - (x / 640) * 120, 30 + (y / 480) * 90, 70 + (x / 640) * 120], f2)
 makePng(300, 200, (x, y) => [200 - (x / 300) * 100, 150 + (y / 200) * 80, 60 + (x / 300) * 90], f3)
+// 大图用于「取消导出」用例（导出耗时足够长，便于中途取消）
+makePng(3000, 2000, (x, y) => [30 + (x / 3000) * 200, 80 + (y / 2000) * 150, 210 - (x / 3000) * 150], f4)
 
 /* ---------- 工具 ---------- */
 let failures = 0
@@ -557,6 +560,46 @@ try {
   const entryNames = Object.keys(zip.files).filter((n) => !zip.files[n].dir)
   check('ZIP 含 2 个文件', entryNames.length === 2, entryNames.join(','))
   check('ZIP 内文件名正确', entryNames.includes('fixture-a_wm.png') && entryNames.includes('fixture-b_wm.png'), entryNames.join(','))
+
+  console.log('· 导出尺寸缩放与取消导出')
+  // 导出尺寸：最长边 800（当前激活图 900×600 → 800×533）
+  await page.locator('select').last().selectOption('800')
+  await page.waitForTimeout(150)
+  const sizeDl = page.waitForEvent('download', { timeout: 20000 })
+  await page.getByRole('button', { name: '下载当前图片' }).click()
+  const sizeBuf = readFileSync(await (await sizeDl).path())
+  const outW = sizeBuf.readUInt32BE(16)
+  const outH = sizeBuf.readUInt32BE(20)
+  check('导出按最长边等比缩放（900×600 → 800×533）', outW === 800 && outH === 533, `${outW}×${outH}`)
+  await page.locator('select').last().selectOption('0')
+  await page.waitForTimeout(150)
+
+  // 取消导出：加入一张 6MP 大图让导出耗时足够长
+  await page
+    .locator('[data-testid="image-list"]:visible input[type="file"]')
+    .setInputFiles(f4)
+  await page.waitForTimeout(1200)
+  check(
+    '大图已加入（供取消用例）',
+    (await page.locator('[data-testid="image-list"]:visible li').count()) === 3,
+    `actual=${await page.locator('[data-testid="image-list"]:visible li').count()}`,
+  )
+  await page.getByRole('button', { name: /ZIP 打包全部/ }).click()
+  const cancelBtn = page.getByRole('button', { name: '取消导出' })
+  await cancelBtn.waitFor({ timeout: 5000 })
+  check('导出过程中显示取消按钮', await cancelBtn.isVisible())
+  await cancelBtn.click()
+  await page.getByText(/已取消导出/).waitFor({ timeout: 20000 })
+  check('取消后给出提示且不再生成 ZIP', true)
+  await page.waitForTimeout(300)
+  await page.locator('[data-testid="image-list"]:visible li').last().hover()
+  await page.locator('[data-testid="image-list"]:visible li').last().getByTitle('移除').click()
+  await page.waitForTimeout(300)
+  check(
+    '清理大图后恢复 2 张',
+    (await page.locator('[data-testid="image-list"]:visible li').count()) === 2,
+    `actual=${await page.locator('[data-testid="image-list"]:visible li').count()}`,
+  )
 
   console.log('· 批量列表管理：移除一张')
   const li = page.locator('[data-testid="image-list"] li:visible').first()

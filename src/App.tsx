@@ -56,6 +56,8 @@ function Shell() {
   const [progress, setProgress] = useState<ExportProgress | null>(null)
   const bigWarned = useRef<Set<string>>(new Set())
   const busyRef = useRef(false)
+  /** 导出取消标记：由「取消导出」按钮置位，processImages 每张图片前检查 */
+  const cancelRef = useRef(false)
 
   const activeItem = activeId ? (items.find((i) => i.id === activeId) ?? null) : null
 
@@ -302,20 +304,26 @@ function Shell() {
       if (mode !== 'one' && items.length === 0) return
       if (mode === 'one' && !activeId) return
       busyRef.current = true
+      cancelRef.current = false
       setProgress({ done: 0, total: 1, phase: t('export.busy.preparing') })
       try {
-        const res = await processImages(items, s, mode, activeId, (p) => setProgress(p))
+        const res = await processImages(items, s, mode, activeId, (p) => setProgress(p), {
+          shouldCancel: () => cancelRef.current,
+        })
         const zip = mode === 'zip'
         const sent = res.okNames.length - (zip ? 1 : 0)
 
+        if (res.canceled) {
+          toast(t('export.canceled', { n: res.okNames.length }), 'info')
+        }
         if (res.emptyContent) {
           toast(t('toast.emptyWatermark'), 'error')
         }
-        if (zip && res.failed.length === 0) {
+        if (!res.canceled && zip && res.failed.length === 0) {
           toast(t('toast.zipStarted', { n: sent }), 'success')
-        } else if (mode === 'one' && res.okNames.length === 1) {
+        } else if (!res.canceled && mode === 'one' && res.okNames.length === 1) {
           toast(t('toast.oneStarted'), 'success')
-        } else if (mode === 'all' && res.failed.length === 0) {
+        } else if (!res.canceled && mode === 'all' && res.failed.length === 0) {
           toast(t('toast.allStarted', { n: sent }), 'success')
         }
         if (res.failed.length > 0) {
@@ -448,6 +456,9 @@ function Shell() {
               busy={busy}
               progress={progress}
               onExport={(mode) => void runExport(mode)}
+              onCancel={() => {
+                cancelRef.current = true
+              }}
             />
           </aside>
         </div>

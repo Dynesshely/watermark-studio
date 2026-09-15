@@ -1,8 +1,9 @@
 import type { ExportMode, ExportProgress } from '../lib/exporter'
 import { TEMPLATE_DEFAULT } from '../lib/filename'
+import { EXPORT_MAX_SIDE_OPTIONS } from '../lib/types'
 import { useSettings } from '../store/settings'
 import { useI18n } from '../store/i18n'
-import { Button, Icon, Slider, toast } from './ui'
+import { Button, Icon, SelectField, Slider, toast } from './ui'
 
 export interface ExportPanelProps {
   count: number
@@ -10,12 +11,22 @@ export interface ExportPanelProps {
   busy: boolean
   progress: ExportProgress | null
   onExport: (mode: ExportMode) => void
+  /** 请求取消进行中的导出 */
+  onCancel: () => void
 }
 
-export function ExportPanel({ count, canDownloadOne, busy, progress, onExport }: ExportPanelProps) {
+export function ExportPanel({
+  count,
+  canDownloadOne,
+  busy,
+  progress,
+  onExport,
+  onCancel,
+}: ExportPanelProps) {
   const { s, set } = useSettings()
   const { t } = useI18n()
   const pct = progress ? Math.round((progress.done / Math.max(1, progress.total)) * 100) : 0
+  const etaSec = progress?.etaMs && progress.etaMs > 900 ? Math.round(progress.etaMs / 1000) : null
 
   return (
     <div className="shrink-0 border-t border-slate-200/80 bg-slate-50/70 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/60">
@@ -37,7 +48,25 @@ export function ExportPanel({ count, canDownloadOne, busy, progress, onExport }:
         display={t('panel.display.pct', { v: Math.round(s.jpegQuality * 100) })}
       />
 
-      <div className="mt-1 flex flex-col gap-1.5">
+      {/* 导出尺寸：按最长边等比缩小 */}
+      <div className="mt-1.5">
+        <SelectField
+          label={t('export.maxSide')}
+          value={String(s.exportMaxSide)}
+          options={EXPORT_MAX_SIDE_OPTIONS.map((v) => ({
+            label: v === 0 ? t('export.maxSideOriginal') : t('export.maxSideValue', { n: v }),
+            value: String(v),
+          }))}
+          onChange={(v) => set({ exportMaxSide: Number(v) })}
+        />
+        {s.exportMaxSide > 0 && (
+          <p className="mt-0.5 text-[10px] leading-relaxed text-slate-400 dark:text-slate-500">
+            {t('export.maxSideNote')}
+          </p>
+        )}
+      </div>
+
+      <div className="mt-1.5 flex flex-col gap-1.5">
         <label className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
           {t('export.template')}
           <button
@@ -64,18 +93,28 @@ export function ExportPanel({ count, canDownloadOne, busy, progress, onExport }:
         </p>
       </div>
 
+      {/* 动作区：ZIP 为主操作（多文件下载会被浏览器拦截） */}
       <div className="mt-2.5 flex flex-col gap-1.5">
         <Button
           variant="primary"
-          icon="download"
-          disabled={!canDownloadOne || busy}
-          onClick={() => onExport('one')}
+          icon="archive"
+          disabled={count === 0 || busy}
+          onClick={() => onExport('zip')}
         >
-          {t('export.downloadCurrent')}
+          {t('export.zipAll')}
         </Button>
         <div className="flex gap-1.5">
           <Button
             variant="soft"
+            icon="download"
+            disabled={!canDownloadOne || busy}
+            onClick={() => onExport('one')}
+            className="flex-1"
+          >
+            {t('export.downloadCurrent')}
+          </Button>
+          <Button
+            variant="outline"
             icon="download"
             disabled={count === 0 || busy}
             onClick={() => onExport('all')}
@@ -83,23 +122,19 @@ export function ExportPanel({ count, canDownloadOne, busy, progress, onExport }:
           >
             {t('export.downloadAll')}
           </Button>
-          <Button
-            variant="outline"
-            icon="archive"
-            disabled={count === 0 || busy}
-            onClick={() => onExport('zip')}
-            className="flex-1"
-          >
-            {t('export.zipAll')}
-          </Button>
         </div>
+        <p className="text-[10px] leading-relaxed text-slate-400 dark:text-slate-500">
+          {t('export.multiNote')}
+        </p>
       </div>
 
       {progress && (
         <div className="mt-2.5 flex flex-col gap-1">
-          <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500 dark:text-slate-400">
             <span className="truncate">{progress.phase}</span>
-            <span className="shrink-0 tabular-nums">{pct}%</span>
+            <span className="shrink-0 tabular-nums">
+              {pct}%{etaSec !== null ? ` · ${t('export.eta', { s: etaSec })}` : ''}
+            </span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
             <div
@@ -107,6 +142,14 @@ export function ExportPanel({ count, canDownloadOne, busy, progress, onExport }:
               style={{ width: `${pct}%` }}
             />
           </div>
+          <Button
+            variant="ghost"
+            icon="close"
+            onClick={onCancel}
+            className="mt-0.5 h-6 self-end px-2 text-[11px]"
+          >
+            {t('export.cancel')}
+          </Button>
         </div>
       )}
 
