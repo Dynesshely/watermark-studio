@@ -98,14 +98,15 @@ export const APP_DEFAULTS: AppSettings = {
 }
 
 /** 导出的图片类型（原始 kind 到导出的映射） */
-export type ImgKind = 'jpeg' | 'png' | 'webp' | 'bmp'
+export type ImgKind = 'jpeg' | 'png' | 'webp' | 'bmp' | 'avif'
 
 export const KIND_EXPORT: Record<ImgKind, { mime: string; ext: string }> = {
   jpeg: { mime: 'image/jpeg', ext: 'jpg' },
   png: { mime: 'image/png', ext: 'png' },
   webp: { mime: 'image/webp', ext: 'webp' },
-  // 浏览器无法可靠编码 BMP，导出按 PNG 兜底
+  // 浏览器无法可靠编码 BMP / AVIF，导出按 PNG 兜底
   bmp: { mime: 'image/png', ext: 'png' },
+  avif: { mime: 'image/png', ext: 'png' },
 }
 
 export const KIND_LABEL: Record<ImgKind, string> = {
@@ -113,6 +114,7 @@ export const KIND_LABEL: Record<ImgKind, string> = {
   png: 'PNG',
   webp: 'WebP',
   bmp: 'BMP',
+  avif: 'AVIF',
 }
 
 export interface ImageItem {

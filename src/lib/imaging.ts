@@ -38,6 +38,19 @@ export async function sniffKind(file: Blob): Promise<ImgKind | null> {
     )
       return 'webp'
     if (buf.length >= 2 && buf[0] === 0x42 && buf[1] === 0x4d) return 'bmp'
+    // AVIF：ISO BMFF 容器，'ftyp' 后紧跟主品牌 'avif' / 'avis'
+    if (
+      buf.length >= 12 &&
+      buf[4] === 0x66 && // f
+      buf[5] === 0x74 && // t
+      buf[6] === 0x79 && // y
+      buf[7] === 0x70 && // p
+      buf[8] === 0x61 && // a
+      buf[9] === 0x76 && // v
+      buf[10] === 0x69 && // i
+      buf[11] === 0x66
+    )
+      return 'avif'
   } catch {
     /* 读取失败走 MIME 兜底 */
   }
@@ -46,11 +59,12 @@ export async function sniffKind(file: Blob): Promise<ImgKind | null> {
   if (m === 'image/png') return 'png'
   if (m === 'image/webp') return 'webp'
   if (m === 'image/bmp') return 'bmp'
+  if (m === 'image/avif') return 'avif'
   return null
 }
 
 export function isSupportedFile(file: File): boolean {
-  return /\.(jpe?g|png|webp|bmp)$/i.test(file.name) || file.type.startsWith('image/')
+  return /\.(jpe?g|png|webp|bmp|avif)$/i.test(file.name) || file.type.startsWith('image/')
 }
 
 export async function sniffMeta(file: File): Promise<{ kind: ImgKind | null; mime: string }> {
@@ -59,6 +73,7 @@ export async function sniffMeta(file: File): Promise<{ kind: ImgKind | null; mim
   if (kind === 'png') return { kind, mime: 'image/png' }
   if (kind === 'webp') return { kind, mime: 'image/webp' }
   if (kind === 'bmp') return { kind, mime: 'image/bmp' }
+  if (kind === 'avif') return { kind, mime: 'image/avif' }
   return { kind: null, mime: file.type }
 }
 
@@ -68,7 +83,6 @@ export const UNSUPPORTED_HINTS = [
   { re: /\.heic$/i, hint: 'HEIC' },
   { re: /\.heif$/i, hint: 'HEIF' },
   { re: /\.svg$/i, hint: 'SVG' },
-  { re: /\.avif$/i, hint: 'AVIF' },
 ]
 
 export function unsupportedHint(name: string): string | null {

@@ -400,6 +400,35 @@ try {
   await page.waitForTimeout(250)
   check('再次清理恢复 2 张', (await page.locator('[data-testid="image-list"]:visible li').count()) === 2)
 
+  console.log('· AVIF 格式嗅探放行')
+  // 说明：无 AVIF 编码器可造真实样本，这里用合法 AVIF 头部做「格式闸门」验证：
+  // 文件应被接受并进入列表（不再被当作不支持格式跳过），点击后解码失败属预期
+  const fakeAvif = join(ART, 'fixture-header-only.avif')
+  const avifBuf = Buffer.alloc(24)
+  avifBuf.writeUInt32BE(24, 0)
+  avifBuf.write('ftyp', 4, 'latin1')
+  avifBuf.write('avif', 8, 'latin1')
+  writeFileSync(fakeAvif, avifBuf)
+
+  await page
+    .locator('[data-testid="image-list"]:visible input[type="file"]')
+    .setInputFiles(fakeAvif)
+  await page.waitForTimeout(600)
+  const avifCard = page.locator('[data-testid="image-list"]:visible li', { hasText: 'AVIF' })
+  check('AVIF 文件被接受（列表出现 AVIF 卡片）', (await avifCard.count()) === 1)
+  check('未出现「不支持」跳过提示', (await page.getByText(/不支持/).count()) === 0)
+  await avifCard.first().click()
+  await page.getByText(/无法解码/).waitFor({ timeout: 8000 })
+  check('AVIF 卡片进入解码流程（坏样本按预期报解码失败）', true)
+  await page.locator('[data-testid="image-list"]:visible li').last().hover()
+  await page.locator('[data-testid="image-list"]:visible li').last().getByTitle('移除').click()
+  await page.waitForTimeout(300)
+  check(
+    '清理 AVIF 卡片后恢复 2 张',
+    (await page.locator('[data-testid="image-list"]:visible li').count()) === 2,
+    `actual=${await page.locator('[data-testid="image-list"]:visible li').count()}`,
+  )
+
   console.log('· 水印预设：保存 / 套用 / 导出 JSON / 导出 ZIP / 导入 / 删除')
   const presetRows = page.locator('[data-testid="preset-list"] li')
 
@@ -562,6 +591,12 @@ try {
   check('ZIP 内文件名正确', entryNames.includes('fixture-a_wm.png') && entryNames.includes('fixture-b_wm.png'), entryNames.join(','))
 
   console.log('· 导出尺寸缩放与取消导出')
+  // 先显式激活 900×600 的那张（前面的用例可能切换过激活图）
+  await page
+    .locator('[data-testid="image-list"]:visible li', { hasText: 'fixture-a' })
+    .first()
+    .click()
+  await page.waitForTimeout(500)
   // 导出尺寸：最长边 800（当前激活图 900×600 → 800×533）
   await page.locator('select').last().selectOption('800')
   await page.waitForTimeout(150)
@@ -585,12 +620,26 @@ try {
     `actual=${await page.locator('[data-testid="image-list"]:visible li').count()}`,
   )
   await page.getByRole('button', { name: /ZIP 打包全部/ }).click()
+  // 按钮随进度出现，出现即点，避免导出先跑完（loop 阶段才会响应取消）
   const cancelBtn = page.getByRole('button', { name: '取消导出' })
-  await cancelBtn.waitFor({ timeout: 5000 })
-  check('导出过程中显示取消按钮', await cancelBtn.isVisible())
-  await cancelBtn.click()
+  await cancelBtn.click({ timeout: 5000 })
+  check('导出过程中显示取消按钮并可点击', true)
   await page.getByText(/已取消导出/).waitFor({ timeout: 20000 })
   check('取消后给出提示且不再生成 ZIP', true)
+  // 等第一条提示条消失，避免下面把旧提示误当成新提示
+  await page.getByText(/已取消导出/).waitFor({ state: 'detached', timeout: 15000 })
+
+  // ZIP 压缩阶段取消：jszip 无法真正中断压缩，但取消后不得产生下载
+  const zipDownloads = []
+  const onDownload = (d) => zipDownloads.push(d)
+  page.on('download', onDownload)
+  await page.getByRole('button', { name: /ZIP 打包全部/ }).click()
+  await page.getByText(/正在压缩打包/).waitFor({ timeout: 30000 })
+  await page.getByRole('button', { name: '取消导出' }).click({ timeout: 5000 })
+  await page.getByText(/已取消导出/).waitFor({ timeout: 30000 })
+  await page.waitForTimeout(3000) // 等压缩真正结束，看是否仍触发下载
+  page.off('download', onDownload)
+  check('压缩阶段取消不再产生下载', zipDownloads.length === 0, `downloads=${zipDownloads.length}`)
   await page.waitForTimeout(300)
   await page.locator('[data-testid="image-list"]:visible li').last().hover()
   await page.locator('[data-testid="image-list"]:visible li').last().getByTitle('移除').click()

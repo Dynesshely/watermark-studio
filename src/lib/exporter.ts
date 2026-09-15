@@ -131,7 +131,8 @@ export async function processImages(
           result.pngFallbackNames.push(item.name)
         }
         if (!blob) throw new Error(t('err.canvasEncode'))
-        if (item.kind === 'bmp') {
+        if (item.kind === 'bmp' || item.kind === 'avif') {
+          // 浏览器没有可靠的 BMP / AVIF 编码器，导出统一按 PNG 兜底
           result.bmpNames.push(item.name)
           result.pngFallbackNames.push(item.name)
         }
@@ -161,19 +162,30 @@ export async function processImages(
   })
 
   if (mode === 'zip') {
-    // 取消后不再生成 ZIP（半包意义不大，避免用户误以为包内齐全）
-    if (result.canceled) return result
+    // 取消后不再生成 ZIP（半包意义不大，避免用户误以为包内齐全）。
+    // 这里再查一次：用户在最后一张渲染期间点取消时，循环可能刚好结束。
+    if (result.canceled || opts.shouldCancel?.()) {
+      result.canceled = true
+      return result
+    }
     onProgress({ done: 0, total: 100, phase: t('export.busy.zipping') })
     const zip = new JSZip()
     for (const o of outputs) zip.file(o.name, o.blob)
+    // jszip 的压缩过程无法真正中断，但取消后必须放弃这次下载。
+    let aborted = false
     const zipBlob = await zip.generateAsync(
       { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
       (meta) => {
+        if (opts.shouldCancel?.()) aborted = true
         if (meta.percent % 5 === 0 || meta.percent === 100) {
           onProgress({ done: Math.round(meta.percent), total: 100, phase: t('export.busy.zipping') })
         }
       },
     )
+    if (aborted || opts.shouldCancel?.()) {
+      result.canceled = true
+      return result
+    }
     downloadBlob(zipBlob, t('export.zipName', { stamp: stamp() }))
     result.okNames.push('ZIP')
   } else {
