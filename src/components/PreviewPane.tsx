@@ -32,6 +32,8 @@ export function PreviewPane({ item, src, loading }: PreviewPaneProps) {
   const [tool, setTool] = useState<Tool>('hand')
   const [box, setBox] = useState({ w: 0, h: 0 })
   const [scale, setScale] = useState<number | null>(null) // null = 适应窗口
+  /** 是否正在拖动水印（用于显示对齐辅助线；辅助线只画在 DOM 覆盖层，不进画布） */
+  const [dragging, setDragging] = useState(false)
 
   const dragRef = useRef<{
     mode: Tool
@@ -140,6 +142,7 @@ export function PreviewPane({ item, src, loading }: PreviewPaneProps) {
     const p = pointerToImg(e)
     if (tool === 'move' && wm.mode === 'single') {
       if (view !== 'wm') setView('wm')
+      setDragging(true)
       const c = clampCenter(
         wm,
         src.width,
@@ -209,6 +212,7 @@ export function PreviewPane({ item, src, loading }: PreviewPaneProps) {
   const onPointerUp = () => {
     const drag = dragRef.current
     dragRef.current = null
+    setDragging(false)
     if (!drag || drag.mode !== 'move' || wm.mode !== 'single') return
     // 松手时若接近九宫格预设则吸附
     const snap = nearestAnchor(drag.lastX, drag.lastY)
@@ -335,27 +339,47 @@ export function PreviewPane({ item, src, loading }: PreviewPaneProps) {
           {src ? (
             <>
               <div className="flex min-h-full w-max min-w-full items-center justify-center p-3">
-                <canvas
-                  ref={canvasRef}
-                  draggable={false}
-                  style={{
-                    width: src.width * displayScale,
-                    height: src.height * displayScale,
-                    touchAction: 'none',
-                  }}
-                  className={cx(
-                    'block rounded-sm shadow-sm select-none',
-                    tool === 'move' && canMoveWm
-                      ? 'cursor-move'
-                      : tool === 'hand'
-                        ? 'cursor-grab active:cursor-grabbing'
-                        : 'cursor-default',
+                <div
+                  className="relative"
+                  style={{ width: src.width * displayScale, height: src.height * displayScale }}
+                >
+                  <canvas
+                    ref={canvasRef}
+                    draggable={false}
+                    style={{
+                      width: src.width * displayScale,
+                      height: src.height * displayScale,
+                      touchAction: 'none',
+                    }}
+                    className={cx(
+                      'block rounded-sm shadow-sm select-none',
+                      tool === 'move' && canMoveWm
+                        ? 'cursor-move'
+                        : tool === 'hand'
+                          ? 'cursor-grab active:cursor-grabbing'
+                          : 'cursor-default',
+                    )}
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerUp}
+                  />
+                  {/* 拖动水印时的对齐辅助线（中心线 + 三分线）；纯 DOM 覆盖层，不写入画布 */}
+                  {dragging && view === 'wm' && wm.mode === 'single' && (
+                    <div
+                      aria-hidden="true"
+                      data-testid="align-guides"
+                      className="pointer-events-none absolute inset-0"
+                    >
+                      <span className="absolute inset-y-0 left-1/3 w-px bg-indigo-400/40" />
+                      <span className="absolute inset-y-0 left-2/3 w-px bg-indigo-400/40" />
+                      <span className="absolute inset-x-0 top-1/3 h-px bg-indigo-400/40" />
+                      <span className="absolute inset-x-0 top-2/3 h-px bg-indigo-400/40" />
+                      <span className="absolute inset-y-0 left-1/2 w-px bg-indigo-500/70" />
+                      <span className="absolute inset-x-0 top-1/2 h-px bg-indigo-500/70" />
+                    </div>
                   )}
-                  onPointerDown={onPointerDown}
-                  onPointerMove={onPointerMove}
-                  onPointerUp={onPointerUp}
-                  onPointerCancel={onPointerUp}
-                />
+                </div>
               </div>
               {loading && (
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center">

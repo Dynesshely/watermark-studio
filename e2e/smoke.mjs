@@ -526,8 +526,12 @@ try {
   check('画布有可见区域', !!box && box.width > 200, JSON.stringify(box))
   await page.mouse.move(box.x + box.width * 0.62, box.y + box.height * 0.55)
   await page.mouse.down()
-  await page.mouse.move(box.x + box.width * 0.38, box.y + box.height * 0.32, { steps: 8 })
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.45, { steps: 6 })
+  check('拖拽时显示对齐辅助线', (await page.locator('[data-testid="align-guides"]').count()) === 1)
+  await page.mouse.move(box.x + box.width * 0.38, box.y + box.height * 0.32, { steps: 6 })
   await page.mouse.up()
+  await page.waitForTimeout(200)
+  check('松手后辅助线消失', (await page.locator('[data-testid="align-guides"]').count()) === 0)
   await page.waitForTimeout(250)
   await page.screenshot({ path: join(ART, '03-single-dragged.png') })
 
