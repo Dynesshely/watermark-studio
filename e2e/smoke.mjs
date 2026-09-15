@@ -157,7 +157,7 @@ try {
   console.log('· 上传两张图片')
   await page.setInputFiles('input[type="file"]', [f1, f2])
   await page.getByText(/已添加 2 张图片/).waitFor({ timeout: 8000 })
-  const cardCount = await page.locator('ul > li:visible').count()
+  const cardCount = await page.locator('[data-testid="image-list"] li:visible').count()
   check('列表出现 2 张卡片', cardCount === 2, `actual=${cardCount}`)
   await page.waitForFunction(
     () => {
@@ -173,6 +173,103 @@ try {
     return [c.width, c.height]
   })
   check('主预览全分辨率解码 (900×600)', dims[0] === 900 && dims[1] === 600, `actual=${dims}`)
+
+  console.log('· 水印预设：保存 / 套用 / 导出 JSON / 导出 ZIP / 导入 / 删除')
+  const presetRows = page.locator('[data-testid="preset-list"] li')
+
+  // 设定一组可识别的参数并保存为预设
+  await page.locator('textarea').fill('预设甲')
+  await page.getByRole('button', { name: '45°', exact: true }).click()
+  await page.waitForTimeout(200)
+  await page.getByTitle('把当前水印参数保存为预设').click()
+  await page.locator('input[placeholder="预设名称"]').fill('测试预设A')
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(300)
+  check('预设已保存并出现在列表', (await presetRows.count()) === 1)
+
+  // 改参后套用预设，验证参数被还原
+  await page.locator('textarea').fill('被改掉的文字')
+  await page.getByRole('button', { name: '0°', exact: true }).click()
+  await page.waitForTimeout(200)
+  check('改参后文本确实变化', (await page.locator('textarea').inputValue()) === '被改掉的文字')
+  await presetRows.first().getByRole('button', { name: '套用' }).click()
+  await page.waitForTimeout(250)
+  check('套用预设还原文字', (await page.locator('textarea').inputValue()) === '预设甲')
+  const angleRestored = await page
+    .getByRole('button', { name: '45°', exact: true })
+    .evaluate((el) => el.className.includes('bg-indigo-600'))
+  check('套用预设还原角度', angleRestored)
+
+  // 导出单个 JSON
+  const jsonDl = page.waitForEvent('download', { timeout: 15000 })
+  await presetRows.first().getByTitle('导出为 JSON').click()
+  const presetDownload = await jsonDl
+  check(
+    'JSON 文件名取自预设名',
+    presetDownload.suggestedFilename() === '测试预设A.json',
+    presetDownload.suggestedFilename(),
+  )
+  const presetJson = JSON.parse(readFileSync(await presetDownload.path(), 'utf8'))
+  check(
+    'JSON 自描述且内容与预设一致',
+    presetJson.type === 'watermark-studio.preset' &&
+      presetJson.version === 1 &&
+      presetJson.name === '测试预设A' &&
+      presetJson.watermark.content === '预设甲' &&
+      presetJson.watermark.angleDeg === 45 &&
+      typeof presetJson.app?.version === 'string',
+    JSON.stringify(presetJson).slice(0, 120),
+  )
+
+  // 再存一个「单次」预设，让 ZIP 内含多条
+  await page.getByRole('tab', { name: '单个水印' }).click()
+  await page.locator('textarea').fill('单次签名')
+  await page.getByTitle('把当前水印参数保存为预设').click()
+  await page.locator('input[placeholder="预设名称"]').fill('测试预设B')
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(300)
+  check('两个预设并存', (await presetRows.count()) === 2)
+
+  // 导出全部为 ZIP
+  const zipDl = page.waitForEvent('download', { timeout: 20000 })
+  await page.getByRole('button', { name: /导出全部 ZIP/ }).click()
+  const presetZipDl = await zipDl
+  const presetZip = await JSZip.loadAsync(readFileSync(await presetZipDl.path()))
+  const presetEntries = Object.keys(presetZip.files).filter((n) => !presetZip.files[n].dir)
+  check(
+    'ZIP 内含两个 .json 文件',
+    presetEntries.length === 2 && presetEntries.every((n) => n.endsWith('.json')),
+    presetEntries.join(','),
+  )
+  const zipInnerRaw = await presetZip.file(presetEntries.find((n) => n.includes('测试预设A'))).async('string')
+  check('ZIP 内 JSON 内容正确', JSON.parse(zipInnerRaw).watermark?.content === '预设甲')
+
+  // 导入外部 JSON 并套用
+  const importPath = join(ART, 'imported-preset.json')
+  writeFileSync(
+    importPath,
+    JSON.stringify(
+      {
+        type: 'watermark-studio.preset',
+        version: 1,
+        name: '导入预设C',
+        watermark: { ...presetJson.watermark, mode: 'tile', content: '来自导入', angleDeg: -15 },
+      },
+      null,
+      2,
+    ),
+  )
+  await page.setInputFiles('input[accept=".json,application/json"]', importPath)
+  await page.waitForTimeout(500)
+  const importedRow = presetRows.filter({ hasText: '导入预设C' })
+  check('导入的预设出现在列表', (await importedRow.count()) === 1)
+  await importedRow.getByRole('button', { name: '套用' }).click()
+  await page.waitForTimeout(250)
+  check('套用导入的预设生效', (await page.locator('textarea').inputValue()) === '来自导入')
+  await importedRow.getByTitle('删除').click()
+  await page.waitForTimeout(250)
+  check('删除后从列表移除', (await presetRows.filter({ hasText: '导入预设C' }).count()) === 0)
+  await page.screenshot({ path: join(ART, '06-presets.png') })
 
   console.log('· 平铺水印渲染（默认参数）')
   const hash = () =>
@@ -235,11 +332,11 @@ try {
   check('ZIP 内文件名正确', entryNames.includes('fixture-a_wm.png') && entryNames.includes('fixture-b_wm.png'), entryNames.join(','))
 
   console.log('· 批量列表管理：移除一张')
-  const li = page.locator('ul > li:visible').first()
+  const li = page.locator('[data-testid="image-list"] li:visible').first()
   await li.hover()
   await li.getByTitle('移除').click()
   await page.waitForTimeout(150)
-  const left = await page.locator('ul > li:visible').count()
+  const left = await page.locator('[data-testid="image-list"] li:visible').count()
   check('移除后剩 1 张', left === 1, `actual=${left}`)
 
   check('无页面运行时错误', pageErrors.length === 0, pageErrors.slice(0, 3).join(' | '))

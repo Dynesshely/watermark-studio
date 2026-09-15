@@ -12,6 +12,7 @@ import {
 import type { ExportMode, ExportProgress } from './lib/exporter'
 import { processImages } from './lib/exporter'
 import { SettingsProvider, useSettings } from './store/settings'
+import { PresetsProvider } from './store/presets'
 import { TopBar } from './components/TopBar'
 import { Hero } from './components/Hero'
 import { ImageList } from './components/ImageList'
@@ -23,8 +24,10 @@ import { cx, Icon, toast, Toaster } from './components/ui'
 export default function App() {
   return (
     <SettingsProvider>
-      <Shell />
-      <Toaster />
+      <PresetsProvider>
+        <Shell />
+        <Toaster />
+      </PresetsProvider>
     </SettingsProvider>
   )
 }

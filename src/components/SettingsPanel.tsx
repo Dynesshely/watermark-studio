@@ -3,6 +3,7 @@ import { ANCHOR_POINTS } from '../lib/renderer'
 import { FONT_OPTIONS } from '../lib/fonts'
 import { useSettings } from '../store/settings'
 import { Button, ColorField, Group, Segmented, SelectField, Slider, Switch, toast } from './ui'
+import { PresetPanel } from './PresetPanel'
 
 export function SettingsPanel() {
   const { s, setWm, resetWm } = useSettings()
@@ -34,6 +35,9 @@ export function SettingsPanel() {
 
   return (
     <div className="flex flex-col pb-6">
+      {/* 水印预设：保存 / 套用 / 导出 JSON / ZIP */}
+      <PresetPanel />
+
       {/* 布局模式 */}
       <Group
         title="布局模式"

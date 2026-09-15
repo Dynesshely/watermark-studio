@@ -1,5 +1,6 @@
 import type { AppSettings } from './types'
 import { APP_DEFAULTS } from './types'
+import { normalizeWm } from './wmSerialize'
 
 const KEY = 'wmstudio.settings.v1'
 
@@ -11,7 +12,8 @@ export function loadSettings(): AppSettings {
     return {
       ...APP_DEFAULTS,
       ...parsed,
-      wm: { ...APP_DEFAULTS.wm, ...(parsed.wm ?? {}) },
+      // 走统一的钳制校验：本地存储被改坏/写入越界值时也能正常启动
+      wm: normalizeWm(parsed.wm),
     }
   } catch {
     return APP_DEFAULTS
