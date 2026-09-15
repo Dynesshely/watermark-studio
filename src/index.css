@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* e2e 脚本里的 Playwright 选择器（如 [data-testid="x"]:visible）会被扫描器
+   当成候选类名，产出无效 CSS 并触发构建告警；测试目录不产生样式，直接排除。 */
+@source not "../e2e";
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 html,
