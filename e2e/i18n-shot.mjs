@@ -108,6 +108,15 @@ try {
   await page.waitForTimeout(400)
   await page.screenshot({ path: join(ART, 'i18n-en-dark.png') })
 
+  // 窄屏：列表变横向条 + 底部操作条（新建 / 打开 / 粘贴）
+  const mobile = await ctx.newPage()
+  await mobile.setViewportSize({ width: 390, height: 844 })
+  await mobile.goto(BASE, { waitUntil: 'networkidle' })
+  await mobile.waitForTimeout(300)
+  await mobile.setInputFiles('input[type="file"]', fixture)
+  await mobile.waitForTimeout(1200)
+  await mobile.screenshot({ path: join(ART, 'i18n-en-mobile.png') })
+
   console.log('done')
 } finally {
   await browser.close()

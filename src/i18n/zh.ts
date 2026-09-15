@@ -17,7 +17,6 @@ export const zh = {
   'topbar.privacyBadge': '图片不上传服务器',
   'topbar.paste': '粘贴图片',
   'topbar.pasteTitle': '读取剪贴板中的图片（Ctrl+V 亦可）',
-  'topbar.add': '添加图片',
   'topbar.theme.light': '浅色主题',
   'topbar.theme.dark': '深色主题',
   'topbar.theme.system': '跟随系统',
@@ -74,6 +73,9 @@ export const zh = {
   'list.remove': '移除',
   'list.removeAria': '移除图片',
   'list.hint': '拖拽卡片可调整导出顺序 · 悬停卡片可切换水印效果',
+  'list.newImage': '新建图片',
+  'list.newImageTitle': '从颜色开始：生成纯色或透明底图',
+  'list.addTitle': '打开图片文件（可多选）',
 
   /* 预览 */
   'preview.view.result': '效果',

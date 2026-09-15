@@ -19,7 +19,6 @@ export const en: Dict = {
   'topbar.privacyBadge': 'Images never leave your device',
   'topbar.paste': 'Paste image',
   'topbar.pasteTitle': 'Read an image from the clipboard (Ctrl+V works too)',
-  'topbar.add': 'Add images',
   'topbar.theme.light': 'Light theme',
   'topbar.theme.dark': 'Dark theme',
   'topbar.theme.system': 'Match system',
@@ -76,6 +75,9 @@ export const en: Dict = {
   'list.remove': 'Remove',
   'list.removeAria': 'Remove image',
   'list.hint': 'Drag cards to reorder export · hover a card to toggle its watermark preview',
+  'list.newImage': 'New image',
+  'list.newImageTitle': 'Start from a color: create a solid or transparent image',
+  'list.addTitle': 'Open image files (multi-select)',
 
   /* Preview */
   'preview.view.result': 'Result',

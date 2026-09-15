@@ -1,12 +1,19 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { useI18n } from '../store/i18n'
 import { Button, Icon } from './ui'
-import { NewFromColorDialog } from './NewFromColorDialog'
 
-export function Hero({ onPick, onPaste }: { onPick: (files: File[]) => void; onPaste: () => void }) {
+export function Hero({
+  onPick,
+  onPaste,
+  onNewColor,
+}: {
+  onPick: (files: File[]) => void
+  onPaste: () => void
+  /** 打开「从颜色开始」面板（弹窗由 Shell 统一持有） */
+  onNewColor: () => void
+}) {
   const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const [colorOpen, setColorOpen] = useState(false)
 
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center p-6">
@@ -37,7 +44,7 @@ export function Hero({ onPick, onPaste }: { onPick: (files: File[]) => void; onP
             variant="outline"
             icon="palette"
             className="h-9 px-5 text-sm"
-            onClick={() => setColorOpen(true)}
+            onClick={onNewColor}
           >
             {t('hero.color')}
           </Button>
@@ -84,12 +91,6 @@ export function Hero({ onPick, onPaste }: { onPick: (files: File[]) => void; onP
           </span>
         </div>
       </div>
-
-      <NewFromColorDialog
-        open={colorOpen}
-        onClose={() => setColorOpen(false)}
-        onCreated={(file) => onPick([file])}
-      />
     </div>
   )
 }

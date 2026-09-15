@@ -1,16 +1,16 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import type { Lang, ThemePref } from '../lib/types'
 import { LANGS } from '../i18n'
 import { useSettings } from '../store/settings'
 import { useI18n } from '../store/i18n'
-import { Button, Icon, Segmented } from './ui'
+import { Icon, Segmented } from './ui'
 import { Logo } from './Logo'
 import { AboutDialog } from './AboutDialog'
 
-export function TopBar({ onPick, onPaste }: { onPick: (files: File[]) => void; onPaste: () => void }) {
+/** 顶栏：品牌区（关于）、隐私徽标、界面语言与主题切换；图片入口已移至列表底部操作条 */
+export function TopBar() {
   const { s, set } = useSettings()
   const { t, lang, setLang } = useI18n()
-  const inputRef = useRef<HTMLInputElement | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
 
   return (
@@ -47,31 +47,6 @@ export function TopBar({ onPick, onPaste }: { onPick: (files: File[]) => void; o
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <Button
-          variant="ghost"
-          icon="clipboard"
-          onClick={onPaste}
-          title={t('topbar.pasteTitle')}
-          className="hidden sm:inline-flex"
-        >
-          {t('topbar.paste')}
-        </Button>
-        <Button variant="soft" icon="plus" onClick={() => inputRef.current?.click()}>
-          {t('topbar.add')}
-        </Button>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/bmp,.jpg,.jpeg,.png,.webp,.bmp"
-          multiple
-          className="hidden"
-          onChange={(e) => {
-            if (e.target.files && e.target.files.length > 0) {
-              onPick(Array.from(e.target.files))
-              e.target.value = ''
-            }
-          }}
-        />
         {/* 界面语言 */}
         <Segmented<Lang>
           value={lang}

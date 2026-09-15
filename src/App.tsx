@@ -20,6 +20,7 @@ import { ImageList } from './components/ImageList'
 import { PreviewPane } from './components/PreviewPane'
 import { SettingsPanel } from './components/SettingsPanel'
 import { ExportPanel } from './components/ExportPanel'
+import { NewFromColorDialog } from './components/NewFromColorDialog'
 import { cx, Icon, toast, Toaster } from './components/ui'
 
 export default function App() {
@@ -51,6 +52,7 @@ function Shell() {
   const [loading, setLoading] = useState(false)
   const [dragOn, setDragOn] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [colorOpen, setColorOpen] = useState(false)
   const [progress, setProgress] = useState<ExportProgress | null>(null)
   const bigWarned = useRef<Set<string>>(new Set())
   const busyRef = useRef(false)
@@ -353,7 +355,7 @@ function Shell() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-slate-100/70 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
-      <TopBar onPick={(files) => void addFiles(files)} onPaste={() => void pasteManual()} />
+      <TopBar />
 
       {dragOn && (
         <div className="pointer-events-none fixed inset-0 z-[90] flex flex-col items-center justify-center gap-3 bg-indigo-600/10 backdrop-blur-[2px]">
@@ -362,11 +364,16 @@ function Shell() {
           </span>
           <p className="rounded-full bg-white/90 px-4 py-1.5 text-sm font-medium text-indigo-700 shadow dark:bg-slate-900/90 dark:text-indigo-300">
             {t('drag.overlay')}
-          </p>        </div>
+          </p>
+        </div>
       )}
 
       {items.length === 0 ? (
-        <Hero onPick={(files) => void addFiles(files)} onPaste={() => void pasteManual()} />
+        <Hero
+          onPick={(files) => void addFiles(files)}
+          onPaste={() => void pasteManual()}
+          onNewColor={() => setColorOpen(true)}
+        />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           {/* 桌面端左侧列表 */}
@@ -380,12 +387,15 @@ function Shell() {
               onRemove={removeItem}
               onClear={clearAll}
               onReorder={reorder}
+              onNewImage={() => setColorOpen(true)}
+              onPick={(files) => void addFiles(files)}
+              onPaste={() => void pasteManual()}
             />
           </div>
 
           {/* 主区域（含窄屏横向列表条） */}
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <div className="flex h-[118px] min-h-0 shrink-0 flex-col border-b border-slate-200/80 bg-white/70 lg:hidden dark:border-slate-800 dark:bg-slate-900/40">
+            <div className="flex h-[172px] min-h-0 shrink-0 flex-col border-b border-slate-200/80 bg-white/70 lg:hidden dark:border-slate-800 dark:bg-slate-900/40">
               <ImageList
                 items={items}
                 activeId={activeId}
@@ -395,6 +405,9 @@ function Shell() {
                 onRemove={removeItem}
                 onClear={clearAll}
                 onReorder={reorder}
+                onNewImage={() => setColorOpen(true)}
+                onPick={(files) => void addFiles(files)}
+                onPaste={() => void pasteManual()}
               />
             </div>
             <PreviewPane item={activeItem} src={src} loading={loading} />
@@ -451,6 +464,13 @@ function Shell() {
           <Icon name="sliders" className="h-5 w-5" />
         </button>
       )}
+
+      {/* 「从颜色开始」面板：待命界面与列表底部操作条共用 */}
+      <NewFromColorDialog
+        open={colorOpen}
+        onClose={() => setColorOpen(false)}
+        onCreated={(file) => void addFiles([file])}
+      />
     </div>
   )
 }

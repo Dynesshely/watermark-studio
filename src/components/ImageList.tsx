@@ -16,11 +16,18 @@ export interface ImageListProps {
   onRemove: (id: string) => void
   onClear: () => void
   onReorder: (from: number, to: number) => void
+  /** 「新建图片」：打开从颜色开始面板 */
+  onNewImage: () => void
+  /** 「打开」：选择本地图片文件 */
+  onPick: (files: File[]) => void
+  /** 「粘贴」：读取剪贴板图片 */
+  onPaste: () => void
 }
 
 /**
  * 图片列表。vertical：左侧完整列表（支持排序、结果缩略图）；
  * strip：窄屏横向条（点击选中 / 移除）。
+ * 底部固定操作条（新建图片 / 打开 / 粘贴）在两种布局下都可用。
  */
 export function ImageList({
   items,
@@ -31,8 +38,12 @@ export function ImageList({
   onRemove,
   onClear,
   onReorder,
+  onNewImage,
+  onPick,
+  onPaste,
 }: ImageListProps) {
   const { t } = useI18n()
+  const fileRef = useRef<HTMLInputElement | null>(null)
   const [showRes, setShowRes] = useState<Record<string, boolean>>({})
   const [resUrl, setResUrl] = useState<Record<string, string>>({})
   const showResRef = useRef(showRes)
@@ -250,6 +261,51 @@ export function ImageList({
           {t('list.hint')}
         </p>
       )}
+
+      {/* 底部固定操作条：外观是一整个按钮，内部为 新建图片 / 打开 / 粘贴 三个按钮 */}
+      <div className="shrink-0 border-t border-slate-200/80 p-1.5 dark:border-slate-800">
+        <div className="flex items-stretch overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm dark:border-slate-600 dark:bg-slate-800">
+          <button
+            type="button"
+            onClick={onNewImage}
+            title={t('list.newImageTitle')}
+            className="flex min-w-0 flex-1 items-center gap-1.5 px-2.5 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-200 dark:hover:bg-indigo-500/15 dark:hover:text-indigo-300"
+          >
+            <Icon name="palette" className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{t('list.newImage')}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            title={t('list.addTitle')}
+            aria-label={t('list.addTitle')}
+            className="flex w-8 shrink-0 items-center justify-center border-l border-slate-300 text-slate-500 transition-colors hover:bg-slate-100 hover:text-indigo-600 dark:border-slate-600 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-indigo-300"
+          >
+            <Icon name="image" className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={onPaste}
+            title={t('topbar.pasteTitle')}
+            aria-label={t('topbar.paste')}
+            className="flex w-8 shrink-0 items-center justify-center border-l border-slate-300 text-slate-500 transition-colors hover:bg-slate-100 hover:text-indigo-600 dark:border-slate-600 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-indigo-300"
+          >
+            <Icon name="clipboard" className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/bmp,.jpg,.jpeg,.png,.webp,.bmp"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? [])
+            e.target.value = ''
+            if (files.length > 0) onPick(files)
+          }}
+        />
+      </div>
     </div>
   )
 }

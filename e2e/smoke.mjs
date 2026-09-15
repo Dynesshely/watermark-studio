@@ -71,8 +71,10 @@ function makePng(w, h, pixelFn, path) {
 
 const f1 = join(ART, 'fixture-a.png')
 const f2 = join(ART, 'fixture-b.png')
+const f3 = join(ART, 'fixture-c.png')
 makePng(900, 600, (x, y) => [40 + (x / 900) * 200, 60 + (y / 600) * 180, 200 - (x / 900) * 120], f1)
 makePng(640, 480, (x, y) => [220 - (x / 640) * 120, 30 + (y / 480) * 90, 70 + (x / 640) * 120], f2)
+makePng(300, 200, (x, y) => [200 - (x / 300) * 100, 150 + (y / 200) * 80, 60 + (x / 300) * 90], f3)
 
 /* ---------- 工具 ---------- */
 let failures = 0
@@ -269,6 +271,57 @@ try {
     return [c.width, c.height]
   })
   check('主预览全分辨率解码 (900×600)', dims[0] === 900 && dims[1] === 600, `actual=${dims}`)
+
+  console.log('· 列表底部操作条：新建图片 / 打开 / 粘贴')
+  const visibleList = page.locator('[data-testid="image-list"]:visible')
+  const newBtn = visibleList.getByRole('button', { name: '新建图片' })
+  const openBtn = visibleList.getByRole('button', { name: '打开图片文件（可多选）' })
+  const pasteBtn = visibleList.getByRole('button', { name: '粘贴图片' })
+  check(
+    '底部操作条三枚按钮均可见',
+    (await newBtn.isVisible()) && (await openBtn.isVisible()) && (await pasteBtn.isVisible()),
+  )
+
+  // 「打开」：通过列表内的文件输入新增一张
+  await visibleList.locator('input[type="file"]').setInputFiles(f3)
+  await page.waitForTimeout(500)
+  check(
+    '通过底部「打开」新增图片',
+    (await page.locator('[data-testid="image-list"]:visible li').count()) === 3,
+    `actual=${await page.locator('[data-testid="image-list"]:visible li').count()}`,
+  )
+  await visibleList.locator('li').last().hover()
+  await visibleList.locator('li').last().getByTitle('移除').click()
+  await page.waitForTimeout(250)
+  check('清理后恢复 2 张', (await page.locator('[data-testid="image-list"]:visible li').count()) === 2)
+
+  // 「新建图片」：在编辑界面内直接生成纯色底图
+  await newBtn.click()
+  await page.waitForSelector('[role="dialog"]')
+  await page.getByLabel('宽', { exact: true }).fill('200')
+  await page.getByLabel('高', { exact: true }).fill('200')
+  await page.getByRole('button', { name: '创建并开始' }).click()
+  await page.waitForTimeout(600)
+  check(
+    '通过底部「新建图片」新增纯色底图',
+    (await page.locator('[data-testid="image-list"]:visible li').count()) === 3,
+    `actual=${await page.locator('[data-testid="image-list"]:visible li').count()}`,
+  )
+  await page.screenshot({ path: join(ART, '09-list-footer.png') })
+  // 透明开关不应跨次残留：本次应为不透明纯色
+  await page.getByTitle('查看原始图片').click()
+  await page.waitForTimeout(200)
+  const footerAlpha = await page.evaluate(() => {
+    const c = document.querySelector('canvas')
+    return c.getContext('2d').getImageData(5, 5, 1, 1).data[3]
+  })
+  check('「透明背景」不跨次残留（本次为不透明）', footerAlpha === 255, `alpha=${footerAlpha}`)
+  await page.getByTitle('带水印效果预览（所见即所得）').click()
+  await page.waitForTimeout(150)
+  await visibleList.locator('li').last().hover()
+  await visibleList.locator('li').last().getByTitle('移除').click()
+  await page.waitForTimeout(250)
+  check('再次清理恢复 2 张', (await page.locator('[data-testid="image-list"]:visible li').count()) === 2)
 
   console.log('· 水印预设：保存 / 套用 / 导出 JSON / 导出 ZIP / 导入 / 删除')
   const presetRows = page.locator('[data-testid="preset-list"] li')

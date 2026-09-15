@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   SOLID_IMAGE_BOUNDS,
   createSolidImage,
@@ -38,6 +38,12 @@ export function NewFromColorDialog({
   const [wText, setWText] = useState('1920')
   const [hText, setHText] = useState('1080')
   const [busy, setBusy] = useState(false)
+
+  // 尺寸与颜色在多次打开之间保留（方便连续生成），但「透明背景」每次打开都重置：
+  // 否则上次勾选的透明会让用户意外得到一张"看不见"的底图。
+  useEffect(() => {
+    if (open) setTransparent(false)
+  }, [open])
 
   const width = Number.parseInt(wText, 10)
   const height = Number.parseInt(hText, 10)
