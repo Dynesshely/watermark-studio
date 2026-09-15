@@ -107,7 +107,9 @@ export function ImageList({
   return (
     <div
       data-testid="image-list"
-      className={cx('flex min-h-0 flex-col', isVertical ? 'hidden lg:flex' : 'lg:hidden')}
+      // flex-1 是必须的：父级是 flex 列容器，否则本容器只有内容高度，
+      // 底部操作条会紧跟最后一张卡片而不是贴齐列表底部
+      className={cx('flex min-h-0 flex-1 flex-col', isVertical ? 'hidden lg:flex' : 'lg:hidden')}
     >
       {isVertical && (
         <div className="flex items-center justify-between border-b border-slate-200/80 px-3 py-2 dark:border-slate-800">

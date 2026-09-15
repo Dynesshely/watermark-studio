@@ -377,7 +377,10 @@ function Shell() {
       ) : (
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           {/* 桌面端左侧列表 */}
-          <div className="hidden h-full w-56 shrink-0 flex-col border-r border-slate-200/80 bg-white/70 lg:flex dark:border-slate-800 dark:bg-slate-900/40">
+          <div
+            data-testid="image-list-pane"
+            className="hidden h-full w-56 shrink-0 flex-col border-r border-slate-200/80 bg-white/70 lg:flex dark:border-slate-800 dark:bg-slate-900/40"
+          >
             <ImageList
               items={items}
               activeId={activeId}
@@ -395,7 +398,10 @@ function Shell() {
 
           {/* 主区域（含窄屏横向列表条） */}
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <div className="flex h-[172px] min-h-0 shrink-0 flex-col border-b border-slate-200/80 bg-white/70 lg:hidden dark:border-slate-800 dark:bg-slate-900/40">
+            <div
+              data-testid="image-list-pane"
+              className="flex h-[172px] min-h-0 shrink-0 flex-col border-b border-slate-200/80 bg-white/70 lg:hidden dark:border-slate-800 dark:bg-slate-900/40"
+            >
               <ImageList
                 items={items}
                 activeId={activeId}

@@ -282,6 +282,15 @@ try {
     (await newBtn.isVisible()) && (await openBtn.isVisible()) && (await pasteBtn.isVisible()),
   )
 
+  // 回归防护：操作条必须贴齐「列表窗格」（固定高度）底部，而不是紧跟最后一张卡片
+  const paneBox = await page.locator('[data-testid="image-list-pane"]:visible').boundingBox()
+  const barBox = await newBtn.boundingBox()
+  check(
+    '底部操作条贴齐列表底部',
+    !!paneBox && !!barBox && barBox.y + barBox.height >= paneBox.y + paneBox.height - 16,
+    `pane=${JSON.stringify(paneBox)} bar=${JSON.stringify(barBox)}`,
+  )
+
   // 「打开」：通过列表内的文件输入新增一张
   await visibleList.locator('input[type="file"]').setInputFiles(f3)
   await page.waitForTimeout(500)
