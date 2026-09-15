@@ -1,8 +1,8 @@
 import type { ExportMode, ExportProgress } from '../lib/exporter'
 import { TEMPLATE_DEFAULT } from '../lib/filename'
 import { useSettings } from '../store/settings'
-import { Button, Icon, Slider } from './ui'
-import { toast } from './ui'
+import { useI18n } from '../store/i18n'
+import { Button, Icon, Slider, toast } from './ui'
 
 export interface ExportPanelProps {
   count: number
@@ -14,37 +14,38 @@ export interface ExportPanelProps {
 
 export function ExportPanel({ count, canDownloadOne, busy, progress, onExport }: ExportPanelProps) {
   const { s, set } = useSettings()
+  const { t } = useI18n()
   const pct = progress ? Math.round((progress.done / Math.max(1, progress.total)) * 100) : 0
 
   return (
     <div className="shrink-0 border-t border-slate-200/80 bg-slate-50/70 px-3 py-3 dark:border-slate-800 dark:bg-slate-900/60">
       <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
         <Icon name="download" className="h-3.5 w-3.5 text-indigo-500" />
-        导出下载
+        {t('export.title')}
         <span className="ml-auto rounded bg-slate-200/80 px-1.5 py-px text-[10px] font-medium text-slate-500 dark:bg-slate-700/80 dark:text-slate-400">
-          本地处理 · 不上传
+          {t('export.localBadge')}
         </span>
       </div>
 
       <Slider
-        label="JPEG / WebP 质量"
+        label={t('export.quality')}
         value={Math.round(s.jpegQuality * 100)}
         min={50}
         max={100}
         step={1}
         onChange={(v) => set({ jpegQuality: v / 100 })}
-        display={`${Math.round(s.jpegQuality * 100)}%`}
+        display={t('panel.display.pct', { v: Math.round(s.jpegQuality * 100) })}
       />
 
       <div className="mt-1 flex flex-col gap-1.5">
         <label className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-          文件名模板
+          {t('export.template')}
           <button
             type="button"
-            title="恢复默认模板 {name}_wm.{ext}"
+            title={t('export.templateReset', { name: '{name}', ext: '{ext}' })}
             onClick={() => {
               set({ filenameTemplate: TEMPLATE_DEFAULT })
-              toast('已恢复默认命名模板', 'success')
+              toast(t('export.templateResetToast'), 'success')
             }}
             className="ml-auto flex h-5 w-5 items-center justify-center rounded text-slate-400 hover:bg-slate-200 hover:text-indigo-600 dark:hover:bg-slate-700"
           >
@@ -59,7 +60,7 @@ export function ExportPanel({ count, canDownloadOne, busy, progress, onExport }:
           className="h-7 w-full rounded-md border border-slate-300 bg-white px-2 font-mono text-[11px] text-slate-700 outline-none focus:border-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
         />
         <p className="-mt-0.5 text-[10px] leading-relaxed text-slate-400 dark:text-slate-500">
-          {'{name}'} 原文件名 · {'{ext}'} 导出扩展名
+          {t('export.templateHint', { name: '{name}', ext: '{ext}' })}
         </p>
       </div>
 
@@ -70,7 +71,7 @@ export function ExportPanel({ count, canDownloadOne, busy, progress, onExport }:
           disabled={!canDownloadOne || busy}
           onClick={() => onExport('one')}
         >
-          下载当前图片
+          {t('export.downloadCurrent')}
         </Button>
         <div className="flex gap-1.5">
           <Button
@@ -80,7 +81,7 @@ export function ExportPanel({ count, canDownloadOne, busy, progress, onExport }:
             onClick={() => onExport('all')}
             className="flex-1"
           >
-            逐张导出全部
+            {t('export.downloadAll')}
           </Button>
           <Button
             variant="outline"
@@ -89,7 +90,7 @@ export function ExportPanel({ count, canDownloadOne, busy, progress, onExport }:
             onClick={() => onExport('zip')}
             className="flex-1"
           >
-            ZIP 打包全部
+            {t('export.zipAll')}
           </Button>
         </div>
       </div>
@@ -111,7 +112,7 @@ export function ExportPanel({ count, canDownloadOne, busy, progress, onExport }:
 
       {count > 0 && !busy && (
         <p className="mt-2 text-[10px] leading-relaxed text-slate-400 dark:text-slate-500">
-          共 {count} 张 · 输出与原图同格式，像素尺寸不变
+          {t('export.summary', { n: count })}
         </p>
       )}
     </div>

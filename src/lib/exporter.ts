@@ -4,6 +4,7 @@ import { KIND_EXPORT } from './types'
 import { decodeToSource, hasJpegMetadata } from './imaging'
 import { canvasToBlob, renderWatermarked } from './renderer'
 import { buildFileName, dedupeNames } from './filename'
+import { t } from '../i18n'
 
 export type ExportMode = 'one' | 'all' | 'zip'
 
@@ -80,7 +81,7 @@ export async function processImages(
   const outputs: { blob: Blob; name: string }[] = []
   let done = 0
   for (const item of targets) {
-    onProgress({ done, total: targets.length, phase: `正在处理 ${item.name}` })
+    onProgress({ done, total: targets.length, phase: t('export.busy.processing', { name: item.name }) })
     try {
       const src = await decodeToSource(item.file)
       try {
@@ -95,7 +96,7 @@ export async function processImages(
           blob = await canvasToBlob(canvas, mime)
           result.pngFallbackNames.push(item.name)
         }
-        if (!blob) throw new Error('Canvas 编码失败')
+        if (!blob) throw new Error(t('err.canvasEncode'))
         if (item.kind === 'bmp') {
           result.bmpNames.push(item.name)
           result.pngFallbackNames.push(item.name)
@@ -109,7 +110,7 @@ export async function processImages(
       result.failed.push({ name: item.name, error: e instanceof Error ? e.message : String(e) })
     }
     done++
-    onProgress({ done, total: targets.length, phase: `正在处理 ${item.name}` })
+    onProgress({ done, total: targets.length, phase: t('export.busy.processing', { name: item.name }) })
   }
 
   const names = dedupeNames(outputs.map((o) => o.name))
@@ -118,19 +119,19 @@ export async function processImages(
   })
 
   if (mode === 'zip') {
-    onProgress({ done: 0, total: 100, phase: '正在压缩打包 ZIP…' })
+    onProgress({ done: 0, total: 100, phase: t('export.busy.zipping') })
     const zip = new JSZip()
     for (const o of outputs) zip.file(o.name, o.blob)
     const zipBlob = await zip.generateAsync(
       { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
       (meta) => {
         if (meta.percent % 5 === 0 || meta.percent === 100) {
-          onProgress({ done: Math.round(meta.percent), total: 100, phase: '正在压缩打包 ZIP…' })
+          onProgress({ done: Math.round(meta.percent), total: 100, phase: t('export.busy.zipping') })
         }
       },
     )
-    downloadBlob(zipBlob, `水印图片_${stamp()}.zip`)
-    result.okNames.push('ZIP 包')
+    downloadBlob(zipBlob, t('export.zipName', { stamp: stamp() }))
+    result.okNames.push('ZIP')
   } else {
     for (const o of outputs) downloadBlob(o.blob, o.name)
   }

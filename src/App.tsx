@@ -12,6 +12,7 @@ import {
 import type { ExportMode, ExportProgress } from './lib/exporter'
 import { processImages } from './lib/exporter'
 import { SettingsProvider, useSettings } from './store/settings'
+import { I18nProvider, useI18n } from './store/i18n'
 import { PresetsProvider } from './store/presets'
 import { TopBar } from './components/TopBar'
 import { Hero } from './components/Hero'
@@ -24,18 +25,28 @@ import { cx, Icon, toast, Toaster } from './components/ui'
 export default function App() {
   return (
     <SettingsProvider>
-      <PresetsProvider>
-        <Shell />
-        <Toaster />
-      </PresetsProvider>
+      <I18nProvider>
+        <PresetsProvider>
+          <Shell />
+          <Toaster />
+        </PresetsProvider>
+      </I18nProvider>
     </SettingsProvider>
   )
 }
 
 function Shell() {
   const { s } = useSettings()
+  const { t } = useI18n()
   const [items, setItems] = useState<ImageItem[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
+
+  /** 汇总列表文案：超过 max 项时截断并追加「等」 */
+  const listItems = (list: string[], max: number): string => {
+    const sep = t('common.listSep')
+    if (list.length <= max) return list.join(sep)
+    return t('common.andMore', { items: list.slice(0, max).join(sep) })
+  }
   const [src, setSrc] = useState<Decoded | null>(null)
   const [loading, setLoading] = useState(false)
   const [dragOn, setDragOn] = useState(false)
@@ -63,12 +74,12 @@ function Shell() {
         }
         const hint = unsupportedHint(file.name)
         if (hint) {
-          skipped.push(`${file.name}（${hint} 不支持）`)
+          skipped.push(t('toast.skipUnsupported', { name: file.name, kind: hint }))
           continue
         }
         const meta = await sniffMeta(file)
         if (!meta.kind) {
-          skipped.push(`${file.name}（无法识别的图片格式）`)
+          skipped.push(t('toast.skipUnknown', { name: file.name }))
           continue
         }
         const item: ImageItem = {
@@ -88,16 +99,21 @@ function Shell() {
         setItems((prev) => [...prev, ...added])
         setActiveId((prev) => prev ?? added[0].id)
       }
-      if (dup > 0) skipped.push(`${dup} 张重复图片`)
+      if (dup > 0) skipped.push(t('toast.skipDuplicate', { n: dup }))
       if (added.length > 0 && skipped.length === 0) {
-        toast(`已添加 ${added.length} 张图片`, 'success')
+        toast(t('toast.addedCount', { n: added.length }), 'success')
       } else if (added.length > 0) {
-        toast(`已添加 ${added.length} 张；跳过：${skipped.slice(0, 2).join('、')}${skipped.length > 2 ? ' 等' : ''}`)
+        toast(
+          t('toast.addedWithSkips', {
+            n: added.length,
+            items: listItems(skipped, 2),
+          }),
+        )
       } else {
-        toast(`未能添加图片：${skipped.slice(0, 3).join('、')}${skipped.length > 3 ? ' 等' : ''}`, 'error')
+        toast(t('toast.addFailed', { items: listItems(skipped, 3) }), 'error')
       }
     },
-    [items],
+    [items, t],
   )
 
   const removeItem = useCallback((id: string) => {
@@ -136,7 +152,7 @@ function Shell() {
 
   const readClipboard = useCallback(async (): Promise<File[]> => {
     if (!navigator.clipboard?.read) {
-      throw new Error('当前浏览器不支持读取剪贴板')
+      throw new Error('clipboard-unavailable')
     }
     const clipItems = await navigator.clipboard.read()
     const files: File[] = []
@@ -145,24 +161,24 @@ function Shell() {
       if (!type) continue
       const blob = await it.getType(type)
       const ext = type.split('/')[1] ?? 'png'
-      const fname = `剪贴板图片-${Date.now().toString(36)}.${ext}`
+      const fname = t('app.clipboardFileName', { stamp: Date.now().toString(36), ext })
       files.push(toFileFromBlob(blob, fname))
     }
     return files
-  }, [])
+  }, [t])
 
   const pasteManual = useCallback(async () => {
     try {
       const files = await readClipboard()
       if (files.length === 0) {
-        toast('剪贴板中没有图片，请先截图或复制图片', 'error')
+        toast(t('toast.clipboardEmpty'), 'error')
         return
       }
       await addFiles(files)
     } catch {
-      toast('无法读取剪贴板：请先点击页面任意处，再按 Ctrl+V 粘贴', 'error')
+      toast(t('toast.clipboardDenied'), 'error')
     }
-  }, [readClipboard, addFiles])
+  }, [readClipboard, addFiles, t])
 
   // 全局 Ctrl+V
   useEffect(() => {
@@ -253,7 +269,7 @@ function Shell() {
         if (isBigImage(d.width, d.height) && !bigWarned.current.has(item.id)) {
           bigWarned.current.add(item.id)
           toast(
-            `「${item.name}」为超大尺寸图片（${d.width}×${d.height}px），处理可能占用较多内存，请留意浏览器响应`,
+            t('toast.bigImage', { name: item.name, w: d.width, h: d.height }),
             'info',
           )
         }
@@ -261,7 +277,7 @@ function Shell() {
       .catch(() => {
         if (dead) return
         setLoading(false)
-        toast(`「${item.name}」无法解码：文件可能已损坏或是不支持的格式`, 'error')
+        toast(t('toast.decodeFailed', { name: item.name }), 'error')
       })
     return () => {
       dead = true
@@ -284,52 +300,51 @@ function Shell() {
       if (mode !== 'one' && items.length === 0) return
       if (mode === 'one' && !activeId) return
       busyRef.current = true
-      setProgress({ done: 0, total: 1, phase: '准备导出…' })
+      setProgress({ done: 0, total: 1, phase: t('export.busy.preparing') })
       try {
         const res = await processImages(items, s, mode, activeId, (p) => setProgress(p))
         const zip = mode === 'zip'
         const sent = res.okNames.length - (zip ? 1 : 0)
 
         if (res.emptyContent) {
-          toast('水印内容为空，导出的图片未添加任何水印', 'error')
+          toast(t('toast.emptyWatermark'), 'error')
         }
         if (zip && res.failed.length === 0) {
-          toast(`ZIP 已开始下载，共打包 ${sent} 张`, 'success')
+          toast(t('toast.zipStarted', { n: sent }), 'success')
         } else if (mode === 'one' && res.okNames.length === 1) {
-          toast('已开始下载当前图片', 'success')
+          toast(t('toast.oneStarted'), 'success')
         } else if (mode === 'all' && res.failed.length === 0) {
-          toast(
-            `已开始逐张下载 ${sent} 张图片；若浏览器询问是否允许多次下载，请选择允许`,
-            'success',
-          )
+          toast(t('toast.allStarted', { n: sent }), 'success')
         }
         if (res.failed.length > 0) {
           toast(
-            `${res.failed.length} 张处理失败：${res.failed
-              .slice(0, 3)
-              .map((f) => f.name)
-              .join('、')}${res.failed.length > 3 ? ' 等' : ''}（${res.failed[0].error}）`,
+            t('toast.failed', {
+              n: res.failed.length,
+              names: listItems(
+                res.failed.map((f) => f.name),
+                3,
+              ),
+              msg: res.failed[0].error,
+            }),
             'error',
           )
         }
         if (res.pngFallbackNames.length > 0) {
-          toast(
-            `${res.pngFallbackNames.length} 张图片（BMP 或无 WebP 编码）已按 PNG 格式导出`,
-            'info',
-          )
+          toast(t('toast.pngFallback', { n: res.pngFallbackNames.length }), 'info')
         }
         if (res.exifWarning) {
-          toast('注意：导出为重新编码，原图 EXIF 元数据（拍摄信息等）不会被保留', 'info')
+          toast(t('toast.exifWarning'), 'info')
         }
       } catch (e) {
         console.error(e)
-        toast(`导出失败：${e instanceof Error ? e.message : '未知错误'}`, 'error')
+        const msg = e instanceof Error ? e.message : t('common.unknownError')
+        toast(t('toast.exportFailed', { msg }), 'error')
       } finally {
         busyRef.current = false
         setProgress(null)
       }
     },
-    [items, s, activeId],
+    [items, s, activeId, t],
   )
 
   const busy = progress !== null
@@ -346,9 +361,8 @@ function Shell() {
             <Icon name="upload" className="h-8 w-8" />
           </span>
           <p className="rounded-full bg-white/90 px-4 py-1.5 text-sm font-medium text-indigo-700 shadow dark:bg-slate-900/90 dark:text-indigo-300">
-            松开鼠标，添加图片
-          </p>
-        </div>
+            {t('drag.overlay')}
+          </p>        </div>
       )}
 
       {items.length === 0 ? (
@@ -394,10 +408,12 @@ function Shell() {
             )}
           >
             <div className="flex h-10 shrink-0 items-center justify-between border-b border-slate-200/80 px-3 lg:hidden dark:border-slate-800">
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">水印参数与导出</span>
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                {t('panel.drawerTitle')}
+              </span>
               <button
                 type="button"
-                aria-label="收起"
+                aria-label={t('panel.collapse')}
                 onClick={() => setPanelOpen(false)}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
@@ -428,7 +444,7 @@ function Shell() {
       {items.length > 0 && (
         <button
           type="button"
-          aria-label="打开参数面板"
+          aria-label={t('panel.openSettings')}
           onClick={() => setPanelOpen((v) => !v)}
           className="fixed bottom-5 right-4 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition-transform hover:scale-105 active:scale-95 lg:hidden"
         >

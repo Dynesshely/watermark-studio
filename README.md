@@ -18,11 +18,14 @@
   导出文件自描述（`type` / `version` / `app.version` / `watermark`），导入时对字段做类型与范围钳制
 - **导出**：与原图同格式（JPG/PNG/WebP；BMP 与不支持 WebP 编码的浏览器回退为 PNG）、JPEG/WebP 质量可调、
   逐张下载 / 全部逐张下载 / **ZIP 打包**（含进度条）、文件名可配置模板（`{name}` 原名 / `{ext}` 扩展名，默认 `{name}_wm.{ext}`）
+- **界面语言**：中文 / English，顶栏一键切换；首次访问按浏览器语言自动检测，选择随设置持久化
 - **细节**：自动应用 EXIF 方向、超大图内存提示、导出时提示 EXIF 元数据将被清除、参数 localStorage 自动记忆（含深浅主题）
 
 ## 技术
 
 - React 18 + TypeScript + Vite + Tailwind CSS v4（无组件库，手写控件）
+- 国际化：零依赖手写 i18n（`src/i18n/zh.ts` 为基准字典，`en.ts` 的类型受其约束——漏译/多译会在 `tsc` 阶段报错）；
+  语言存于设置中，切换时同步 `<html lang>`、页面标题与描述
 - Canvas 2D 本地渲染，导出 Blob 走浏览器下载；ZIP 用 [jszip](https://github.com/Stuk/jszip)
 - 移动端窄屏：图片列表变横向条、参数面板变抽屉
 

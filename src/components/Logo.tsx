@@ -2,9 +2,18 @@
  * 品牌 LOGO（与 public/favicon.svg 同源同稿）：
  * 照片卡片 + 斜向平铺水印条纹，表达「图片水印」语义。
  */
+import { useI18n } from '../store/i18n'
+
 export function Logo({ className = 'h-7 w-7' }: { className?: string }) {
+  const { t } = useI18n()
   return (
-    <svg viewBox="0 0 64 64" fill="none" className={className} aria-label="水印工坊 LOGO" role="img">
+    <svg
+      viewBox="0 0 64 64"
+      fill="none"
+      className={className}
+      aria-label={t('app.logoAlt')}
+      role="img"
+    >
       <defs>
         <linearGradient id="wm-logo-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor="#4F46E5" />

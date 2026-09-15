@@ -90,6 +90,8 @@ const ctx = await browser.newContext({
   viewport: { width: 1440, height: 900 },
   acceptDownloads: true,
   colorScheme: 'light',
+  // 浏览器语言设为中文：应用首次访问按浏览器偏好检测语言，后续断言据此使用中文文案
+  locale: 'zh-CN',
 })
 const page = await ctx.newPage()
 const pageErrors = []
@@ -108,6 +110,26 @@ try {
   await page.getByTitle('深色主题').click()
   check('html.dark 生效', await page.evaluate(() => document.documentElement.classList.contains('dark')))
   await page.getByTitle('浅色主题').click()
+
+  console.log('· 国际化：中英切换与持久化')
+  await page.getByTitle('English').click()
+  await page.waitForTimeout(250)
+  check('html lang 切换为 en', (await page.evaluate(() => document.documentElement.lang)) === 'en')
+  check('页面标题本地化', (await page.title()).includes('Watermark Studio'), await page.title())
+  check('空状态文案切换为英文', (await page.getByText(/Drag images here/i).count()) > 0)
+  await page.screenshot({ path: join(ART, '07-i18n-en.png') })
+
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.waitForTimeout(300)
+  check(
+    '刷新后仍为英文（语言已持久化）',
+    (await page.getByText(/Drag images here/i).count()) > 0 &&
+      (await page.evaluate(() => document.documentElement.lang)) === 'en',
+  )
+
+  await page.getByTitle('中文').click()
+  await page.waitForTimeout(250)
+  check('切回中文生效', (await page.getByText(/把图片拖到这里/).count()) > 0)
 
   console.log('· 品牌区交互与「关于」弹窗')
   const brand = page.getByRole('button', { name: /关于/ })

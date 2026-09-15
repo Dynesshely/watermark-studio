@@ -1,5 +1,6 @@
 import type { WmSettings } from './types'
 import { WM_DEFAULTS } from './types'
+import { t } from '../i18n'
 
 /** 预设文件格式标识（导入时会校验，避免误吞其它 JSON） */
 export const PRESET_FILE_TYPE = 'watermark-studio.preset'
@@ -93,7 +94,7 @@ export function toPresetFile(p: WmPreset): PresetFile {
     name: p.name,
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,
-    app: { name: '水印工坊', version: appVersion() },
+    app: { name: t('app.name'), version: appVersion() },
     watermark: p.wm,
   }
 }
@@ -126,15 +127,15 @@ export function parsePresetJson(text: string): ParsedPreset {
   try {
     raw = JSON.parse(text)
   } catch {
-    throw new Error('JSON 解析失败')
+    throw new Error(t('err.jsonParse'))
   }
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-    throw new Error('不是有效的配置对象')
+    throw new Error(t('err.jsonNotObject'))
   }
   const obj = raw as Record<string, unknown>
   const source = 'watermark' in obj ? obj.watermark : 'wm' in obj ? obj.wm : obj
   if (!looksLikeWm(source)) {
-    throw new Error('缺少水印参数字段')
+    throw new Error(t('err.jsonNoWatermark'))
   }
   const name = typeof obj.name === 'string' && obj.name.trim() ? obj.name.trim().slice(0, 60) : null
   return { name, wm: normalizeWm(source) }
@@ -151,7 +152,7 @@ export function safePresetFileName(name: string): string {
 
 /** 预设名称去重：重名时追加序号 */
 export function uniquePresetName(base: string, existing: string[]): string {
-  const name = base.trim() || '未命名预设'
+  const name = base.trim() || t('preset.unnamed')
   if (!existing.includes(name)) return name
   let i = 2
   while (existing.includes(`${name} ${i}`)) i++

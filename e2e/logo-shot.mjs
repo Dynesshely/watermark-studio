@@ -13,7 +13,7 @@ mkdirSync(ART, { recursive: true })
 
 const browser = await chromium.launch()
 try {
-  const page = await browser.newPage({ viewport: { width: 1400, height: 900 } })
+  const page = await browser.newPage({ viewport: { width: 1400, height: 900 }, locale: 'zh-CN' })
 
   // 1) favicon 多尺寸渲染（用 setContent 精确控制尺寸）
   await page.goto(BASE, { waitUntil: 'networkidle' })
@@ -28,7 +28,7 @@ try {
   await page.waitForTimeout(400)
   await page.screenshot({ path: join(ART, 'logo-sizes.png') })
 
-  const brand = page.getByRole('button', { name: /关于/ })
+  const brand = page.locator('[data-testid="brand-button"]')
 
   // 2) 品牌区 hover 态（浅色）
   await page.goto(BASE, { waitUntil: 'networkidle' })

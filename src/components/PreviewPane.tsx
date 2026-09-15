@@ -9,6 +9,7 @@ import {
   WatermarkTooDenseError,
 } from '../lib/renderer'
 import { useSettings } from '../store/settings'
+import { useI18n } from '../store/i18n'
 import { cx, Icon, Segmented, toast } from './ui'
 
 export interface PreviewPaneProps {
@@ -22,6 +23,7 @@ type Tool = 'move' | 'hand'
 
 export function PreviewPane({ item, src, loading }: PreviewPaneProps) {
   const { s, setWm } = useSettings()
+  const { t } = useI18n()
   const wm = s.wm
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
@@ -232,8 +234,8 @@ export function PreviewPane({ item, src, loading }: PreviewPaneProps) {
             value={view}
             onChange={setView}
             options={[
-              { value: 'wm', label: '效果', title: '带水印效果预览（所见即所得）' },
-              { value: 'raw', label: '原图', title: '查看原始图片' },
+              { value: 'wm', label: t('preview.view.result'), title: t('preview.view.resultTitle') },
+              { value: 'raw', label: t('preview.view.raw'), title: t('preview.view.rawTitle') },
             ]}
           />
         )}
@@ -242,21 +244,25 @@ export function PreviewPane({ item, src, loading }: PreviewPaneProps) {
             value={tool}
             onChange={setTool}
             options={[
-              { value: 'move', label: '拖动水印', title: '在画布上直接拖动水印位置' },
-              { value: 'hand', label: '平移视图', title: '拖动查看图片其它区域' },
+              { value: 'move', label: t('preview.tool.move'), title: t('preview.tool.moveTitle') },
+              { value: 'hand', label: t('preview.tool.hand'), title: t('preview.tool.handTitle') },
             ]}
           />
         )}
         {src && (
           <span className="hidden shrink-0 items-center gap-1.5 text-[11px] text-slate-400 md:flex dark:text-slate-500">
             <Icon name="image" className="h-3.5 w-3.5" />
-            {src.width} × {src.height}px · {item ? KIND_LABEL[item.kind] : ''}
+            {t('preview.dims', {
+              w: src.width,
+              h: src.height,
+              kind: item ? KIND_LABEL[item.kind] : '',
+            })}
           </span>
         )}
         <span className="ml-auto flex shrink-0 items-center gap-0.5">
           <button
             type="button"
-            title="缩小"
+            title={t('preview.zoom.out')}
             onClick={() => zoomBy(1 / 1.25)}
             className="flex h-6.5 w-6.5 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/70 disabled:opacity-30 dark:text-slate-400 dark:hover:bg-slate-700/60"
             disabled={!src}
@@ -268,7 +274,7 @@ export function PreviewPane({ item, src, loading }: PreviewPaneProps) {
           </span>
           <button
             type="button"
-            title="放大"
+            title={t('preview.zoom.in')}
             onClick={() => zoomBy(1.25)}
             className="flex h-6.5 w-6.5 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/70 disabled:opacity-30 dark:text-slate-400 dark:hover:bg-slate-700/60"
             disabled={!src}
@@ -277,7 +283,7 @@ export function PreviewPane({ item, src, loading }: PreviewPaneProps) {
           </button>
           <button
             type="button"
-            title="适应窗口"
+            title={t('preview.zoom.fit')}
             onClick={() => setScale(null)}
             className={cx(
               'flex h-6.5 w-6.5 items-center justify-center rounded-md hover:bg-slate-200/70 disabled:opacity-30 dark:hover:bg-slate-700/60',
@@ -324,7 +330,7 @@ export function PreviewPane({ item, src, loading }: PreviewPaneProps) {
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                   <div className="flex items-center gap-2 rounded-lg bg-white/90 px-3 py-2 text-xs text-slate-600 shadow backdrop-blur dark:bg-slate-900/90 dark:text-slate-300">
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-                    正在解码图片…
+                    {t('preview.decoding')}
                   </div>
                 </div>
               )}
@@ -333,7 +339,7 @@ export function PreviewPane({ item, src, loading }: PreviewPaneProps) {
             <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
               <Icon name="image" className="h-10 w-10 opacity-50" />
               <p className="text-sm">
-                {item ? '正在解码…' : '从左侧选择一张图片开始预览'}
+                {item ? t('preview.placeholderLoading') : t('preview.placeholder')}
               </p>
             </div>
           )}

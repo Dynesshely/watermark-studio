@@ -1,6 +1,8 @@
 export type UnitMode = 'percent' | 'px'
 export type WmMode = 'single' | 'tile'
 export type ThemePref = 'light' | 'dark' | 'system'
+/** 界面语言 */
+export type Lang = 'zh' | 'en'
 
 /** 水印参数（一套参数套用全部图片） */
 export interface WmSettings {
@@ -45,6 +47,8 @@ export interface WmSettings {
 
 export interface AppSettings {
   theme: ThemePref
+  /** 界面语言（首次访问按浏览器偏好自动检测） */
+  lang: Lang
   /** JPEG/WebP 导出质量 */
   jpegQuality: number
   /** 导出文件名模板，支持 {name} {ext} */
@@ -55,7 +59,7 @@ export interface AppSettings {
 export const WM_DEFAULTS: WmSettings = {
   mode: 'tile',
   unit: 'percent',
-  content: '我的水印',
+  content: '',
   fontFamily: 'PingFang SC',
   fontWeight: 400,
   fontSize: 4,
@@ -81,6 +85,7 @@ export const WM_DEFAULTS: WmSettings = {
 
 export const APP_DEFAULTS: AppSettings = {
   theme: 'system',
+  lang: 'zh',
   jpegQuality: 0.92,
   filenameTemplate: '{name}_wm.{ext}',
   wm: WM_DEFAULTS,

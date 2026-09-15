@@ -1,5 +1,6 @@
 import type { WmSettings } from './types'
 import { fontCss } from './fonts'
+import { t } from '../i18n'
 
 export interface ImageLike {
   el: CanvasImageSource
@@ -21,7 +22,7 @@ const MAX_CELLS = 120_000
 
 export class WatermarkTooDenseError extends Error {
   constructor() {
-    super('平铺间距过小，绘制开销过大，请增大间距后重试')
+    super(t('err.tooDense'))
     this.name = 'WatermarkTooDenseError'
   }
 }
@@ -35,7 +36,7 @@ function getScratchCtx(): CanvasRenderingContext2D {
     scratchCanvas.width = 8
     scratchCanvas.height = 8
     const c = scratchCanvas.getContext('2d')
-    if (!c) throw new Error('Canvas 2D 不可用')
+    if (!c) throw new Error(t('err.canvas'))
     scratchCtx = c
   }
   return scratchCtx
@@ -240,7 +241,7 @@ export function renderWatermarked(
   canvas.width = Math.max(1, Math.round(width * destScale))
   canvas.height = Math.max(1, Math.round(height * destScale))
   const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Canvas 2D 不可用')
+  if (!ctx) throw new Error(t('err.canvas'))
   ctx.setTransform(destScale, 0, 0, destScale, 0, 0)
   ctx.imageSmoothingEnabled = true
   ctx.drawImage(source, 0, 0, width, height)

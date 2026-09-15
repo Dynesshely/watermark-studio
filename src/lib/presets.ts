@@ -2,6 +2,7 @@ import JSZip from 'jszip'
 import type { WmPreset } from './wmSerialize'
 import { safePresetFileName, serializePreset } from './wmSerialize'
 import { dedupeNames } from './filename'
+import { t } from '../i18n'
 
 /**
  * 把所有预设打包为 ZIP（内含逐个 .json 文件）。
@@ -22,5 +23,6 @@ export async function buildPresetsZip(presets: WmPreset[]): Promise<Blob> {
 
 export function presetsZipName(now = new Date()): string {
   const p = (n: number) => String(n).padStart(2, '0')
-  return `水印预设_${now.getFullYear()}${p(now.getMonth() + 1)}${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}.zip`
+  const stamp = `${now.getFullYear()}${p(now.getMonth() + 1)}${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}`
+  return t('preset.zipName', { stamp })
 }

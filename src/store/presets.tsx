@@ -10,6 +10,7 @@ import {
 import type { WmSettings } from '../lib/types'
 import type { WmPreset } from '../lib/wmSerialize'
 import { makePresetId, normalizeWm, uniquePresetName } from '../lib/wmSerialize'
+import { t } from '../i18n'
 
 const KEY = 'wmstudio.presets.v1'
 
@@ -32,7 +33,7 @@ function sanitize(raw: unknown): WmPreset | null {
   const o = raw as Record<string, unknown>
   const now = new Date().toISOString()
   const name =
-    typeof o.name === 'string' && o.name.trim() ? o.name.trim().slice(0, 60) : '未命名预设'
+    typeof o.name === 'string' && o.name.trim() ? o.name.trim().slice(0, 60) : t('preset.unnamed')
   return {
     id: typeof o.id === 'string' && o.id ? o.id : makePresetId(),
     name,

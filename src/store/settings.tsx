@@ -9,6 +9,7 @@ import {
 } from 'react'
 import type { AppSettings, WmSettings } from '../lib/types'
 import { APP_DEFAULTS } from '../lib/types'
+import { t } from '../i18n'
 import { applyTheme, loadSettings, saveSettings } from '../lib/storage'
 
 interface SettingsApi {
@@ -31,7 +32,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setS((prev) => ({ ...prev, wm: { ...prev.wm, ...patch } }))
   }, [])
   const resetWm = useCallback(() => {
-    setS((prev) => ({ ...prev, wm: { ...APP_DEFAULTS.wm } }))
+    // 默认水印文字随界面语言走，避免英文界面出现中文默认文案
+    setS((prev) => ({ ...prev, wm: { ...APP_DEFAULTS.wm, content: t('app.defaultWatermark') } }))
   }, [])
 
   // 应用主题

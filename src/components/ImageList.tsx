@@ -4,6 +4,7 @@ import { KIND_LABEL } from '../lib/types'
 import { decodeSmall } from '../lib/imaging'
 import { renderWatermarked } from '../lib/renderer'
 import { formatBytes } from '../lib/imaging'
+import { useI18n } from '../store/i18n'
 import { cx, Icon, toast } from './ui'
 
 export interface ImageListProps {
@@ -31,6 +32,7 @@ export function ImageList({
   onClear,
   onReorder,
 }: ImageListProps) {
+  const { t } = useI18n()
   const [showRes, setShowRes] = useState<Record<string, boolean>>({})
   const [resUrl, setResUrl] = useState<Record<string, string>>({})
   const showResRef = useRef(showRes)
@@ -69,7 +71,7 @@ export function ImageList({
             return { ...p, [id]: url }
           })
         } catch {
-          toast(`「${item.name}」缩略图渲染失败，已显示原图`, 'error')
+          toast(t('toast.thumbFailed', { name: item.name }), 'error')
         }
       }
     }, 160)
@@ -99,7 +101,7 @@ export function ImageList({
       {isVertical && (
         <div className="flex items-center justify-between border-b border-slate-200/80 px-3 py-2 dark:border-slate-800">
           <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-            图片列表
+            {t('list.title')}
             <span className="ml-1.5 rounded bg-indigo-50 px-1.5 py-px text-[11px] font-medium text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
               {items.length}
             </span>
@@ -108,11 +110,11 @@ export function ImageList({
             type="button"
             disabled={items.length === 0}
             onClick={onClear}
-            title="清空全部"
+            title={t('list.clearTitle')}
             className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500 disabled:pointer-events-none disabled:opacity-40 dark:hover:bg-rose-500/10"
           >
             <Icon name="trash" className="h-3 w-3" />
-            清空
+            {t('list.clear')}
           </button>
         </div>
       )}
@@ -159,7 +161,11 @@ export function ImageList({
               <button
                 type="button"
                 onClick={() => onSelect(item.id)}
-                title={`${item.name}（${KIND_LABEL[item.kind]} · ${formatBytes(item.size)}）`}
+                title={t('list.cardTitle', {
+                  name: item.name,
+                  kind: KIND_LABEL[item.kind],
+                  size: formatBytes(item.size),
+                })}
                 className={cx(
                   'flex w-full items-center gap-2 rounded-lg border p-1 text-left transition-colors',
                   isVertical ? 'min-h-[64px]' : 'flex-col items-start gap-1',
@@ -184,7 +190,7 @@ export function ImageList({
                   />
                   {res && resUrl[item.id] && (
                     <span className="absolute bottom-0.5 right-0.5 rounded-sm bg-indigo-600/90 px-1 text-[9px] font-medium text-white">
-                      水印
+                      {t('list.badge.watermarked')}
                     </span>
                   )}
                 </span>
@@ -193,7 +199,10 @@ export function ImageList({
                     {item.name}
                   </span>
                   <span className="mt-0.5 text-[10px] text-slate-400 dark:text-slate-500">
-                    {KIND_LABEL[item.kind]} · {formatBytes(item.size)}
+                    {t('list.cardMeta', {
+                      kind: KIND_LABEL[item.kind],
+                      size: formatBytes(item.size),
+                    })}
                   </span>
                 </span>
               </button>
@@ -210,8 +219,8 @@ export function ImageList({
               >
                 <button
                   type="button"
-                  title={res ? '显示原图' : '预览水印效果'}
-                  aria-label="原图/效果切换"
+                  title={res ? t('list.toggle.showOriginal') : t('list.toggle.showResult')}
+                  aria-label={t('list.toggle.aria')}
                   onClick={() => setShowRes((p) => ({ ...p, [item.id]: !p[item.id] }))}
                   className={cx(
                     'flex h-6 w-6 items-center justify-center transition-colors',
@@ -224,8 +233,8 @@ export function ImageList({
                 </button>
                 <button
                   type="button"
-                  title="移除"
-                  aria-label="移除图片"
+                  title={t('list.remove')}
+                  aria-label={t('list.removeAria')}
                   onClick={() => onRemove(item.id)}
                   className="flex h-6 w-6 items-center justify-center text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-500/10"
                 >
@@ -238,7 +247,7 @@ export function ImageList({
       </ul>
       {isVertical && items.length > 1 && (
         <p className="border-t border-slate-200/80 px-3 py-1.5 text-[10px] leading-relaxed text-slate-400 dark:border-slate-800 dark:text-slate-500">
-          拖拽卡片可调整导出顺序 · 悬停卡片可切换水印效果
+          {t('list.hint')}
         </p>
       )}
     </div>

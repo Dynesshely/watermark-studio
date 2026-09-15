@@ -1,17 +1,30 @@
 import type { AppSettings } from './types'
-import { APP_DEFAULTS } from './types'
+import { APP_DEFAULTS, WM_DEFAULTS } from './types'
+import { detectLang, isLang, t } from '../i18n'
 import { normalizeWm } from './wmSerialize'
 
 const KEY = 'wmstudio.settings.v1'
 
+/** 首次访问的默认参数：默认水印文字随界面语言 */
+function firstRunDefaults(lang: AppSettings['lang']): AppSettings {
+  return {
+    ...APP_DEFAULTS,
+    lang,
+    wm: { ...WM_DEFAULTS, content: t('app.defaultWatermark') },
+  }
+}
+
 export function loadSettings(): AppSettings {
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return APP_DEFAULTS
+    // 首次访问：语言按浏览器偏好自动检测
+    if (!raw) return firstRunDefaults(detectLang())
     const parsed = JSON.parse(raw) as Partial<AppSettings>
     return {
       ...APP_DEFAULTS,
       ...parsed,
+      // 老版本设置没有 lang 字段；非法值同样回落到检测结果
+      lang: isLang(parsed.lang) ? parsed.lang : detectLang(),
       // 走统一的钳制校验：本地存储被改坏/写入越界值时也能正常启动
       wm: normalizeWm(parsed.wm),
     }

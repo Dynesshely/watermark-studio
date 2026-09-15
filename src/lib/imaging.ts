@@ -1,4 +1,5 @@
 import type { ImgKind } from './types'
+import { t } from '../i18n'
 
 export interface Decoded {
   /** 已按 EXIF 方向校正过的图像源 */
@@ -62,7 +63,7 @@ export async function sniffMeta(file: File): Promise<{ kind: ImgKind | null; mim
 
 /** 粗略判断文件是否可解码为位图（动图/HEIC 等在解码时才暴露，这里只做前缀提示） */
 export const UNSUPPORTED_HINTS = [
-  { re: /\.gif$/i, hint: 'GIF 动图' },
+  { re: /\.gif$/i, hint: 'GIF' },
   { re: /\.heic$/i, hint: 'HEIC' },
   { re: /\.heif$/i, hint: 'HEIF' },
   { re: /\.svg$/i, hint: 'SVG' },
@@ -91,7 +92,7 @@ export async function decodeToSource(file: File | Blob): Promise<Decoded> {
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {
         const el = new Image()
         el.onload = () => resolve(el)
-        el.onerror = () => reject(new Error('图片解码失败'))
+        el.onerror = () => reject(new Error(t('err.decode')))
         el.src = url
       })
       const w = img.naturalWidth
@@ -100,7 +101,7 @@ export async function decodeToSource(file: File | Blob): Promise<Decoded> {
       canvas.width = w
       canvas.height = h
       const ctx = canvas.getContext('2d')
-      if (!ctx) throw new Error('Canvas 2D 不可用')
+      if (!ctx) throw new Error(t('err.canvas'))
       ctx.drawImage(img, 0, 0)
       return { el: canvas, width: w, height: h }
     } finally {
@@ -186,7 +187,7 @@ export async function decodeSmall(file: File, maxSide = 560): Promise<Decoded> {
   canvas.width = w
   canvas.height = h
   const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Canvas 2D 不可用')
+  if (!ctx) throw new Error(t('err.canvas'))
   ctx.drawImage(full.el, 0, 0, w, h)
   full.dispose?.()
   const d: Decoded = { el: canvas, width: w, height: h }

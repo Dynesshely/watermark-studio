@@ -290,12 +290,15 @@ export function Segmented<T extends string>({
   onChange,
   disabled,
   className,
+  size = 'md',
 }: {
   options: { value: T; label: ReactNode; title?: string }[]
   value: T
   onChange: (v: T) => void
   disabled?: boolean
   className?: string
+  /** sm：去掉最小宽度，适合顶栏等空间紧张处 */
+  size?: 'md' | 'sm'
 }) {
   return (
     <div
@@ -315,7 +318,8 @@ export function Segmented<T extends string>({
           title={o.title}
           onClick={() => onChange(o.value)}
           className={cx(
-            'flex h-6.5 min-w-14 items-center justify-center gap-1 rounded-md px-2 text-xs transition-colors',
+            'flex items-center justify-center gap-1 rounded-md text-xs transition-colors',
+            size === 'sm' ? 'h-6 min-w-0 px-1.5' : 'h-6.5 min-w-14 px-2',
             o.value === value
               ? 'bg-white font-medium text-indigo-600 shadow-sm dark:bg-slate-600 dark:text-white'
               : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',

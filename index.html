@@ -7,13 +7,33 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>水印工坊 · 本地图片水印工具</title>
     <script>
-      // 启动前按本地存储应用主题，避免闪烁
+      // 启动前应用主题与界面语言（避免闪烁 / 英文用户先看到中文标题）
       try {
         var raw = localStorage.getItem('wmstudio.settings.v1')
-        var t = raw ? JSON.parse(raw).theme : 'system'
+        var cfg = raw ? JSON.parse(raw) : null
+        var theme = (cfg && cfg.theme) || 'system'
         var dark =
-          t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          theme === 'dark' ||
+          (theme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
         if (dark) document.documentElement.classList.add('dark')
+
+        var stored = cfg && cfg.lang
+        var lang =
+          stored === 'zh' || stored === 'en'
+            ? stored
+            : /^zh\b/i.test(navigator.language || '')
+              ? 'zh'
+              : 'en'
+        document.documentElement.lang = lang
+        if (lang === 'en') {
+          document.title = 'Watermark Studio · Local image watermark tool'
+          var meta = document.querySelector('meta[name="description"]')
+          if (meta)
+            meta.setAttribute(
+              'content',
+              'Watermark Studio - a browser-only image watermark tool; images are never uploaded',
+            )
+        }
       } catch (e) {}
     </script>
   </head>
