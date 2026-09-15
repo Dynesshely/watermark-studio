@@ -12,6 +12,7 @@ export const en: Dict = {
   'app.logoAlt': 'Watermark Studio logo',
   'app.defaultWatermark': 'My watermark',
   'app.clipboardFileName': 'clipboard-{stamp}.{ext}',
+  'app.solidFileName': 'solid-{w}x{h}.png',
 
   /* Top bar */
   'topbar.about': 'About Watermark Studio',
@@ -31,6 +32,7 @@ export const en: Dict = {
   'hero.privacy': 'Watermarking runs entirely in your browser — images are never uploaded anywhere',
   'hero.pick': 'Choose images',
   'hero.paste': 'Paste from clipboard',
+  'hero.color': 'Start from a color',
   'hero.kbdPrefix': 'You can also press',
   'hero.kbdSuffix': 'to paste a screenshot',
   'hero.chip.formats': 'JPG / PNG / WebP / BMP',
@@ -39,6 +41,27 @@ export const en: Dict = {
   'hero.chip.preset': 'Presets · JSON import/export',
   'hero.chip.export': 'Same-format export',
   'drag.overlay': 'Release to add images',
+
+  /* Start from a color */
+  'color.title': 'Start from a color',
+  'color.subtitle': 'Create a solid-color or fully transparent blank image, then watermark it',
+  'color.color': 'Background color',
+  'color.transparent': 'Transparent background',
+  'color.transparentHint': 'Exports a fully transparent PNG (alpha = 0) — handy for compositing later',
+  'color.size': 'Resolution',
+  'color.presets': 'Common sizes',
+  'color.width': 'Width',
+  'color.height': 'Height',
+  'color.swap': 'Swap width and height',
+  'color.pixels': '{mp} megapixels',
+  'color.large': 'Large canvas ({w}×{h}) — creating and processing it may need a lot of memory',
+  'color.invalid': 'Width and height must be {min}–{max} px, with a total under {mp} MP',
+  'color.create': 'Create and start',
+  'color.cancel': 'Cancel',
+  'color.failed': 'Failed to create: {msg}',
+  'color.toast': 'Created a {w}×{h} {kind} image',
+  'color.kind.solid': 'solid-color',
+  'color.kind.transparent': 'transparent',
 
   /* Image list */
   'list.title': 'Images',

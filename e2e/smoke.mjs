@@ -176,6 +176,80 @@ try {
   await page.waitForTimeout(250)
   check('点击遮罩可关闭弹窗', (await page.locator('[role="dialog"]').count()) === 0)
 
+  console.log('· 从颜色开始：纯色底图与透明底图')
+  await page.getByRole('button', { name: '从颜色开始' }).click()
+  await page.waitForSelector('[role="dialog"]')
+  check('颜色面板已打开', (await page.getByRole('dialog').count()) === 1)
+
+  // 纯色 640×480 / #3366cc
+  const hexInput = page.getByRole('dialog').locator('input[type="text"]')
+  await hexInput.fill('#3366cc')
+  await hexInput.press('Enter')
+  await page.getByLabel('宽', { exact: true }).fill('640')
+  await page.getByLabel('高', { exact: true }).fill('480')
+  await page.waitForTimeout(150)
+  await page.screenshot({ path: join(ART, '08-color-dialog.png') })
+  await page.getByRole('button', { name: '创建并开始' }).click()
+  await page.waitForTimeout(600)
+
+  const cards = page.locator('[data-testid="image-list"] li:visible')
+  check('纯色底图已加入列表', (await cards.count()) === 1, `actual=${await cards.count()}`)
+  await page.waitForFunction(
+    () => {
+      const c = document.querySelector('canvas')
+      return !!c && c.width === 640 && c.height === 480
+    },
+    undefined,
+    { timeout: 10000 },
+  )
+  await page.getByTitle('查看原始图片').click()
+  await page.waitForTimeout(200)
+  const solidPx = await page.evaluate(() => {
+    const c = document.querySelector('canvas')
+    const d = c.getContext('2d').getImageData(8, 8, 1, 1).data
+    return [d[0], d[1], d[2], d[3]]
+  })
+  check(
+    '纯色底图像素等于所选颜色（#3366cc 不透明）',
+    solidPx.join(',') === '51,102,204,255',
+    solidPx.join(','),
+  )
+
+  // 清理，回到待命界面
+  await cards.first().hover()
+  await cards.first().getByTitle('移除').click()
+  await page.waitForTimeout(300)
+  check('移除后回到待命界面', (await page.getByText(/把图片拖到这里/).count()) > 0)
+
+  // 透明底图 320×200
+  await page.getByRole('button', { name: '从颜色开始' }).click()
+  await page.waitForSelector('[role="dialog"]')
+  await page.getByLabel('透明背景').click()
+  await page.getByLabel('宽', { exact: true }).fill('320')
+  await page.getByLabel('高', { exact: true }).fill('200')
+  await page.getByRole('button', { name: '创建并开始' }).click()
+  await page.waitForTimeout(600)
+  await page.waitForFunction(
+    () => {
+      const c = document.querySelector('canvas')
+      return !!c && c.width === 320 && c.height === 200
+    },
+    undefined,
+    { timeout: 10000 },
+  )
+  await page.getByTitle('查看原始图片').click()
+  await page.waitForTimeout(200)
+  const alpha = await page.evaluate(() => {
+    const c = document.querySelector('canvas')
+    return c.getContext('2d').getImageData(10, 10, 1, 1).data[3]
+  })
+  check('透明底图完全透明（alpha=0）', alpha === 0, `alpha=${alpha}`)
+
+  // 清理，回到待命界面供后续上传用例使用
+  await page.locator('[data-testid="image-list"] li:visible').first().hover()
+  await page.locator('[data-testid="image-list"] li:visible').first().getByTitle('移除').click()
+  await page.waitForTimeout(300)
+
   console.log('· 上传两张图片')
   await page.setInputFiles('input[type="file"]', [f1, f2])
   await page.getByText(/已添加 2 张图片/).waitFor({ timeout: 8000 })

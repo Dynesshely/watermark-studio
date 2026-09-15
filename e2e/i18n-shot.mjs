@@ -83,6 +83,14 @@ try {
   console.log('html lang =', lang, '| title =', await page.title())
   await page.screenshot({ path: join(ART, 'i18n-en-hero.png') })
 
+  // 「从颜色开始」面板（英文）
+  await page.getByRole('button', { name: 'Start from a color' }).click()
+  await page.waitForSelector('[role="dialog"]')
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: join(ART, 'i18n-en-color.png') })
+  await page.keyboard.press('Escape')
+  await page.waitForTimeout(200)
+
   // 上传图片 → 参数面板出现（英文长文案最容易溢出的地方）
   await page.setInputFiles('input[type="file"]', fixture)
   await page.waitForTimeout(1200)

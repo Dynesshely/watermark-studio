@@ -1,5 +1,6 @@
 import type { ImgKind } from './types'
 import { t } from '../i18n'
+import { canvasToBlob } from './renderer'
 
 export interface Decoded {
   /** 已按 EXIF 方向校正过的图像源 */
@@ -150,6 +151,46 @@ export function makeItemId(): string {
 
 export function toFileFromBlob(blob: Blob, name: string): File {
   return new File([blob], name, { type: blob.type || 'image/png' })
+}
+
+/* ---------------- 从颜色开始：生成纯色 / 全透明底图 ---------------- */
+
+/** 合成底图的尺寸约束（与超大图提示阈值保持一致的量级） */
+export const SOLID_IMAGE_BOUNDS = { min: 16, max: 8000, maxPixels: 32_000_000 }
+
+export function solidImageSizeValid(width: number, height: number): boolean {
+  const b = SOLID_IMAGE_BOUNDS
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return false
+  if (width < b.min || height < b.min) return false
+  if (width > b.max || height > b.max) return false
+  return width * height <= b.maxPixels
+}
+
+/**
+ * 生成一张纯色或全透明的 PNG 图片。
+ * color 传 null 时输出 alpha=0 的完全透明图片（PNG 保留透明通道）。
+ */
+export async function createSolidImage(
+  width: number,
+  height: number,
+  color: string | null,
+): Promise<File> {
+  const b = SOLID_IMAGE_BOUNDS
+  const w = Math.round(Math.min(b.max, Math.max(b.min, width)))
+  const h = Math.round(Math.min(b.max, Math.max(b.min, height)))
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error(t('err.canvas'))
+  if (color) {
+    ctx.fillStyle = color
+    ctx.fillRect(0, 0, w, h)
+  }
+  // color 为 null 时不绘制任何内容，canvas 默认即全透明
+  const blob = await canvasToBlob(canvas, 'image/png')
+  if (!blob) throw new Error(t('err.canvasEncode'))
+  return new File([blob], t('app.solidFileName', { w, h }), { type: 'image/png' })
 }
 
 /* ---------------- 小尺寸解码缓存（供列表缩略图水印预览） ---------------- */

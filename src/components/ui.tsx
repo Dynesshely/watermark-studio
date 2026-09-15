@@ -91,6 +91,8 @@ export type IconName =
   | 'zoomOut'
   | 'expand'
   | 'shield'
+  | 'palette'
+  | 'swap'
   | 'file'
 
 const PATHS: Record<IconName, ReactNode> = {
@@ -220,6 +222,16 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="m9 12 2 2 4-4" />
     </>
   ),
+  palette: (
+    <>
+      <circle cx="13.5" cy="6.5" r="1.2" />
+      <circle cx="17.5" cy="10.5" r="1.2" />
+      <circle cx="8.5" cy="7.5" r="1.2" />
+      <circle cx="6.5" cy="12.5" r="1.2" />
+      <path d="M12 2a10 10 0 0 0 0 20c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01a1.5 1.5 0 0 1 1.13-2.49H16a6 6 0 0 0 6-6c0-4.97-4.48-9-10-9Z" />
+    </>
+  ),
+  swap: <path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4" />,
   file: (
     <>
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />

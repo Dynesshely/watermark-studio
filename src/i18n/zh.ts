@@ -10,6 +10,7 @@ export const zh = {
   'app.logoAlt': '水印工坊 LOGO',
   'app.defaultWatermark': '我的水印',
   'app.clipboardFileName': '剪贴板图片-{stamp}.{ext}',
+  'app.solidFileName': '纯色图片-{w}x{h}.png',
 
   /* 顶栏 */
   'topbar.about': '关于 水印工坊',
@@ -29,6 +30,7 @@ export const zh = {
   'hero.privacy': '加水印全程在你的浏览器本地完成，图片不会上传到任何服务器',
   'hero.pick': '选择图片',
   'hero.paste': '从剪贴板粘贴',
+  'hero.color': '从颜色开始',
   'hero.kbdPrefix': '也可以直接',
   'hero.kbdSuffix': '粘贴屏幕截图',
   'hero.chip.formats': 'JPG / PNG / WebP / BMP',
@@ -37,6 +39,27 @@ export const zh = {
   'hero.chip.preset': '预设 · 配置导入导出',
   'hero.chip.export': '同格式导出',
   'drag.overlay': '松开鼠标，添加图片',
+
+  /* 从颜色开始 */
+  'color.title': '从颜色开始',
+  'color.subtitle': '生成一张纯色或完全透明的空白图片，再在它上面制作水印',
+  'color.color': '背景颜色',
+  'color.transparent': '透明背景',
+  'color.transparentHint': '导出 alpha=0 的完全透明 PNG，适合之后叠加到其它图片上',
+  'color.size': '分辨率',
+  'color.presets': '常用尺寸',
+  'color.width': '宽',
+  'color.height': '高',
+  'color.swap': '交换宽高',
+  'color.pixels': '共 {mp} 百万像素',
+  'color.large': '尺寸偏大（{w}×{h}），生成与处理可能占用较多内存',
+  'color.invalid': '宽高需为 {min}–{max} 像素，且总像素不超过 {mp} 百万',
+  'color.create': '创建并开始',
+  'color.cancel': '取消',
+  'color.failed': '生成失败：{msg}',
+  'color.toast': '已创建 {w}×{h} 的{kind}图片',
+  'color.kind.solid': '纯色',
+  'color.kind.transparent': '透明',
 
   /* 图片列表 */
   'list.title': '图片列表',

@@ -1,10 +1,12 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useI18n } from '../store/i18n'
 import { Button, Icon } from './ui'
+import { NewFromColorDialog } from './NewFromColorDialog'
 
 export function Hero({ onPick, onPaste }: { onPick: (files: File[]) => void; onPaste: () => void }) {
   const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const [colorOpen, setColorOpen] = useState(false)
 
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center p-6">
@@ -19,7 +21,7 @@ export function Hero({ onPick, onPaste }: { onPick: (files: File[]) => void; onP
           <Icon name="shield" className="h-3.5 w-3.5 text-emerald-500" />
           {t('hero.privacy')}
         </p>
-        <div className="mt-6 flex items-center justify-center gap-2">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
           <Button
             variant="primary"
             icon="upload"
@@ -30,6 +32,14 @@ export function Hero({ onPick, onPaste }: { onPick: (files: File[]) => void; onP
           </Button>
           <Button variant="outline" icon="clipboard" className="h-9 px-5 text-sm" onClick={onPaste}>
             {t('hero.paste')}
+          </Button>
+          <Button
+            variant="outline"
+            icon="palette"
+            className="h-9 px-5 text-sm"
+            onClick={() => setColorOpen(true)}
+          >
+            {t('hero.color')}
           </Button>
           <input
             ref={inputRef}
@@ -74,6 +84,13 @@ export function Hero({ onPick, onPaste }: { onPick: (files: File[]) => void; onP
           </span>
         </div>
       </div>
+
+      <NewFromColorDialog
+        open={colorOpen}
+        onClose={() => setColorOpen(false)}
+        onCreated={(file) => onPick([file])}
+      />
     </div>
   )
 }
+
