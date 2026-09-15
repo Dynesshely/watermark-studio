@@ -208,6 +208,11 @@ export const en: Dict = {
   'preset.overwrite': 'Update this preset with current settings',
   'preset.exportOne': 'Export as JSON',
   'preset.delete': 'Delete',
+  'preset.duplicate': 'Duplicate (with settings)',
+  'preset.copySuffix': 'copy',
+  'preset.searchPlaceholder': 'Search preset name or watermark text',
+  'preset.searchClear': 'Clear search',
+  'preset.noMatch': 'No preset matches "{q}"',
   'preset.exportAll': 'Export all as ZIP',
   'preset.exportAllTitle': 'Bundle every preset into a ZIP (one .json per preset)',
   'preset.import': 'Import JSON',
@@ -225,6 +230,7 @@ export const en: Dict = {
   'preset.toast.importFailed': 'Failed to import {n} file(s): {names}',
   'preset.toast.overwritten': 'Preset "{name}" updated with current settings',
   'preset.toast.deleted': 'Preset "{name}" deleted',
+  'preset.toast.duplicated': 'Duplicated as "{name}"',
   'preset.zipName': 'watermark-presets_{stamp}.zip',
 
   /* About dialog */

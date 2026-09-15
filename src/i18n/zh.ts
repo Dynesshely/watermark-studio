@@ -206,6 +206,11 @@ export const zh = {
   'preset.overwrite': '用当前参数更新此预设',
   'preset.exportOne': '导出为 JSON',
   'preset.delete': '删除',
+  'preset.duplicate': '复制一份（含参数）',
+  'preset.copySuffix': '副本',
+  'preset.searchPlaceholder': '搜索预设名称或水印文字',
+  'preset.searchClear': '清除搜索',
+  'preset.noMatch': '没有匹配「{q}」的预设',
   'preset.exportAll': '导出全部 ZIP',
   'preset.exportAllTitle': '把所有预设打包为 ZIP（内含逐个 .json）',
   'preset.import': '导入 JSON',
@@ -223,6 +228,7 @@ export const zh = {
   'preset.toast.importFailed': '导入失败 {n} 个：{names}',
   'preset.toast.overwritten': '已用当前参数更新「{name}」',
   'preset.toast.deleted': '已删除「{name}」',
+  'preset.toast.duplicated': '已复制为「{name}」',
   'preset.zipName': '水印预设_{stamp}.zip',
 
   /* 关于弹窗 */

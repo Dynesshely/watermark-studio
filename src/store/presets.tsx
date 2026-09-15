@@ -24,6 +24,8 @@ interface PresetsApi {
   rename: (id: string, name: string) => void
   /** 用当前参数覆盖指定预设 */
   overwrite: (id: string, wm: WmSettings) => void
+  /** 复制一份预设（插在原项之后），返回新预设名；源不存在时返回 null */
+  duplicate: (id: string) => string | null
 }
 
 const Ctx = createContext<PresetsApi | null>(null)
@@ -116,8 +118,25 @@ export function PresetsProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
+  const duplicate = useCallback((id: string) => {
+    const src = presetsRef.current.find((p) => p.id === id)
+    if (!src) return null
+    const now = new Date().toISOString()
+    const name = uniquePresetName(
+      `${src.name} ${t('preset.copySuffix')}`,
+      presetsRef.current.map((p) => p.name),
+    )
+    setPresets((prev) => {
+      const i = prev.findIndex((p) => p.id === id)
+      if (i < 0) return prev
+      const copy: WmPreset = { id: makePresetId(), name, createdAt: now, updatedAt: now, wm: src.wm }
+      return [...prev.slice(0, i + 1), copy, ...prev.slice(i + 1)]
+    })
+    return name
+  }, [])
+
   return (
-    <Ctx.Provider value={{ presets, add, addMany, remove, rename, overwrite }}>
+    <Ctx.Provider value={{ presets, add, addMany, remove, rename, overwrite, duplicate }}>
       {children}
     </Ctx.Provider>
   )

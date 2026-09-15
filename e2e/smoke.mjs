@@ -658,6 +658,81 @@ try {
   const left = await page.locator('[data-testid="image-list"] li:visible').count()
   check('移除后剩 1 张', left === 1, `actual=${left}`)
 
+  console.log('· 水印预设：搜索与复制')
+  // 直接写 localStorage 造出「预设较多」的场景（搜索框阈值 5 条）
+  await page.evaluate(() => {
+    const now = new Date().toISOString()
+    const items = Array.from({ length: 6 }, (_, i) => ({
+      id: `seed-${i}`,
+      name: `种子预设${i + 1}`,
+      createdAt: now,
+      updatedAt: now,
+      wm: { content: i === 2 ? '独特文字XYZ' : `种子水印${i + 1}`, mode: 'tile', angleDeg: 30 },
+    }))
+    localStorage.setItem('wmstudio.presets.v1', JSON.stringify(items))
+  })
+  await page.reload()
+  // 无图片时界面停留在待命页（不渲染编辑面板），重新导一张进入编辑态
+  await page.locator('input[type="file"]').first().setInputFiles(f1)
+  await page.waitForTimeout(1500)
+  const seeded = page.locator('[data-testid="preset-list"] li')
+  await seeded.first().waitFor({ timeout: 20000 })
+  const seededCount = await seeded.count()
+  check(
+    '预设较多（6 条）时出现搜索框',
+    seededCount === 6 && (await page.locator('[data-testid="preset-search"]').count()) === 1,
+    `rows=${seededCount}`,
+  )
+
+  const search = page.locator('[data-testid="preset-search"]')
+  await search.fill('独特文字XYZ') // 只命中的是水印文字，不是预设名
+  await page.waitForTimeout(200)
+  check(
+    '按水印文字搜索命中 1 条',
+    (await seeded.count()) === 1 && (await seeded.first().innerText()).includes('种子预设3'),
+    `rows=${await seeded.count()}`,
+  )
+
+  await search.fill('种子预设5')
+  await page.waitForTimeout(200)
+  check(
+    '按名称搜索命中 1 条',
+    (await seeded.count()) === 1 && (await seeded.first().innerText()).includes('种子预设5'),
+    `rows=${await seeded.count()}`,
+  )
+
+  await search.fill('不存在的水印zzz')
+  await page.waitForTimeout(200)
+  check(
+    '无匹配时显示空状态且列表为空',
+    (await page.locator('[data-testid="preset-no-match"]').count()) === 1 &&
+      (await seeded.count()) === 0,
+  )
+
+  await search.fill('')
+  await page.waitForTimeout(200)
+  check('清空搜索后恢复全部 6 条', (await seeded.count()) === 6, `rows=${await seeded.count()}`)
+
+  // 复制：插在原项之后、名称带「副本」后缀、参数与源一致
+  await seeded.nth(1).getByTitle('复制一份（含参数）').click()
+  await page.waitForTimeout(300)
+  const afterCopy = await seeded.allInnerTexts()
+  check(
+    '复制后新增一条并插在原项之后',
+    afterCopy.length === 7 && afterCopy[2].includes('种子预设2 副本'),
+    `rows=${afterCopy.length}, row2=${(afterCopy[2] ?? '').split('\n')[0]}`,
+  )
+  check('副本保留源预设的水印参数', afterCopy[2].includes('种子水印2'), afterCopy[2] ?? '')
+  // 名称去重：再复制一次同一项，应得到「副本 2」而不是重名
+  await seeded.nth(1).getByTitle('复制一份（含参数）').click()
+  await page.waitForTimeout(300)
+  const afterCopy2 = await seeded.allInnerTexts()
+  check(
+    '重复复制时名称自动去重',
+    afterCopy2.length === 8 && afterCopy2[2].includes('种子预设2 副本 2'),
+    `rows=${afterCopy2.length}, row2=${(afterCopy2[2] ?? '').split('\n')[0]}`,
+  )
+
   check('无页面运行时错误', pageErrors.length === 0, pageErrors.slice(0, 3).join(' | '))
 } finally {
   await browser.close()

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { WmSettings } from '../lib/types'
 import type { WmPreset } from '../lib/wmSerialize'
 import { parsePresetJson, safePresetFileName, serializePreset } from '../lib/wmSerialize'
@@ -11,6 +11,9 @@ import { useI18n } from '../store/i18n'
 import { Button, Group, Icon, cx, toast, type IconName } from './ui'
 
 type TFn = (key: DictKey, params?: TParams) => string
+
+/** 预设数量达到该阈值才显示搜索框（少量预设时搜索框只是噪声） */
+const SEARCH_MIN = 5
 
 /** 列表行右侧的小图标按钮 */
 function RowIcon({
@@ -68,13 +71,23 @@ function suggestName(t: TFn, wm: WmSettings, count: number): string {
 export function PresetPanel() {
   const { s, setWm } = useSettings()
   const { t } = useI18n()
-  const { presets, add, addMany, remove, rename, overwrite } = usePresets()
+  const { presets, add, addMany, remove, rename, overwrite, duplicate } = usePresets()
   const [saving, setSaving] = useState(false)
   const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState('')
   const [busy, setBusy] = useState(false)
+  const [query, setQuery] = useState('')
   const importRef = useRef<HTMLInputElement | null>(null)
+
+  // 名称 + 水印文字（含多行）都可搜；大小写不敏感
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return presets
+    return presets.filter(
+      (p) => p.name.toLowerCase().includes(q) || p.wm.content.toLowerCase().includes(q),
+    )
+  }, [presets, query])
 
   const startSave = () => {
     setSaving(true)
@@ -144,6 +157,11 @@ export function PresetPanel() {
     }
   }
 
+  const duplicatePreset = (p: WmPreset) => {
+    const name = duplicate(p.id)
+    if (name) toast(t('preset.toast.duplicated', { name }), 'success')
+  }
+
   const commitRename = (id: string, value: string) => {
     const v = value.trim()
     if (v) rename(id, v)
@@ -196,13 +214,53 @@ export function PresetPanel() {
         </div>
       )}
 
+      {presets.length >= SEARCH_MIN && (
+        <div className="relative flex items-center">
+          <Icon
+            name="search"
+            className="pointer-events-none absolute left-2 h-3.5 w-3.5 text-slate-400"
+          />
+          <input
+            data-testid="preset-search"
+            value={query}
+            placeholder={t('preset.searchPlaceholder')}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setQuery('')
+            }}
+            className="h-7 w-full rounded-md border border-slate-300 bg-white pl-7 pr-7 text-xs text-slate-700 outline-none focus:border-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+          />
+          {query && (
+            <button
+              type="button"
+              title={t('preset.searchClear')}
+              aria-label={t('preset.searchClear')}
+              onClick={() => setQuery('')}
+              className="absolute right-1.5 flex h-5 w-5 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+            >
+              <Icon name="close" className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      )}
+
       {presets.length === 0 ? (
         <p className="rounded-lg bg-slate-100/80 px-2 py-1.5 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/70 dark:text-slate-400">
           {t('preset.empty')}
         </p>
+      ) : shown.length === 0 ? (
+        <p
+          data-testid="preset-no-match"
+          className="rounded-lg bg-slate-100/80 px-2 py-1.5 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/70 dark:text-slate-400"
+        >
+          {t('preset.noMatch', { q: query.trim() })}
+        </p>
       ) : (
-        <ul data-testid="preset-list" className="flex flex-col gap-1">
-          {presets.map((p) => (
+        <ul
+          data-testid="preset-list"
+          className="nice-scroll flex max-h-64 flex-col gap-1 overflow-y-auto pr-0.5"
+        >
+          {shown.map((p) => (
             <li
               key={p.id}
               className="rounded-lg border border-slate-200 px-2 py-1.5 transition-colors hover:border-indigo-300 dark:border-slate-700 dark:hover:border-indigo-600/60"
@@ -246,6 +304,11 @@ export function PresetPanel() {
                 <span className="min-w-0 flex-1 truncate text-[10px] text-slate-400 dark:text-slate-500">
                   {metaLine(t, p.wm)}
                 </span>
+                <RowIcon
+                  icon="copy"
+                  title={t('preset.duplicate')}
+                  onClick={() => duplicatePreset(p)}
+                />
                 <RowIcon
                   icon="refresh"
                   title={t('preset.overwrite')}
