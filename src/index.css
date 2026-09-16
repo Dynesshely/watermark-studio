@@ -1,8 +1,13 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 
-/* e2e 脚本里的 Playwright 选择器（如 [data-testid="x"]:visible）会被扫描器
-   当成候选类名，产出无效 CSS 并触发构建告警；测试目录不产生样式，直接排除。 */
-@source not "../e2e";
+/* 只扫描真正产出 class 的两处：入口 HTML 与 src/。
+ * Tailwind 默认会扫整个项目，于是 e2e 脚本里的 Playwright 选择器
+ * （`[data-testid="x"]:visible`）、README 里引用它的那句话、以及工作流 YAML
+ * 都会被当成候选类名，产出 `...:is(){visibility:visible}` 这类非法规则，
+ * 触发构建告警，还会让产物随文档改动而变化（同一份源码构建出不同的 CSS）。
+ * 白名单比逐个排除稳：新加目录（.github、docs、scripts）不会再悄悄污染产物。 */
+@source "../index.html";
+@source "./";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

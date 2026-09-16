@@ -200,8 +200,10 @@ i18n 与主题、弹窗焦点陷阱等。断言尽量落在**几何与像素**�
 - **i18n**：`src/i18n/zh.ts` 是基准字典，`en.ts` 的类型由它约束 —— 漏译或多余键会在 `tsc` 阶段报错，
   新增文案必须两处同时加。
 - **参数钳制**：来自 localStorage 与导入 JSON 的值一律先过 `normalizeWm()`，越界字段回落到默认值。
-- **Tailwind 扫描**：`src/index.css` 里有 `@source not "../e2e"` —— 否则 e2e 脚本里的 Playwright 选择器
-  （`[data-testid="x"]:visible`）会被当成候选类名，产出非法 CSS 并触发构建告警。
+- **Tailwind 扫描范围**：`src/index.css` 用 `@import "tailwindcss" source(none)` + `@source`
+  显式指定 `index.html` 与 `src/`。默认的「扫全仓库」会把 e2e 脚本里的 Playwright 选择器
+  （`[data-testid="x"]:visible`）乃至 README 里引用它的那句话当成候选类名，
+  产出非法 CSS、触发构建告警，还会让同一份源码随文档改动构建出不同的产物。
 
 ## 已知边界
 
