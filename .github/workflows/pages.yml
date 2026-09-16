@@ -1,6 +1,8 @@
 # 构建并发布到 GitHub Pages
 #
-# 一次性前置条件：仓库 Settings → Pages → Build and deployment → Source 选「GitHub Actions」。
+# 首次部署若仓库还没启用 Pages，下面的 `actions/configure-pages` 会用
+# `enablement: true` 自动启用；也可以提前在 Settings → Pages → Build and
+# deployment → Source 里手动选「GitHub Actions」。
 # （用「Deploy from a branch」也行，但那样要自己维护 gh-pages 分支，且 Pages 的
 #   base 处理容易踩坑；官方 artifact 流程不需要额外分支。）
 #
@@ -51,6 +53,8 @@ jobs:
       - run: pnpm build:pages
 
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

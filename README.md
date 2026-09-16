@@ -214,7 +214,9 @@ i18n 与主题、弹窗焦点陷阱等。断言尽量落在**几何与像素**�
 | `ci.yml` | push 到 `main`、任何 PR、手动 | `pnpm build` 与 `pnpm build:pages` 各构建一遍，再用**真实 Chromium** 跑 `e2e/smoke.mjs`；失败时上传 `e2e/artifacts` 里的截图 |
 | `pages.yml` | push 到 `main`、手动 | `pnpm build:pages` → 上传 Pages 产物 → 发布到 `https://<user>.github.io/<repo>/` |
 
-需要在仓库里做一次设置：**Settings → Pages → Build and deployment → Source 选「GitHub Actions」**。
+首次部署时，如果仓库还没启用 Pages，工作流里的 `actions/configure-pages@v5`
+会通过 `enablement: true` 自动启用；也可以提前在 **Settings → Pages → Build and
+deployment → Source** 里手动选「GitHub Actions」。
 （选「Deploy from a branch」就需要自己维护 `gh-pages` 分支，官方 artifact 流程不用。）
 CI 里的 pnpm 版本取自 `package.json` 的 `packageManager` 字段，不在工作流里重复写死。
 
