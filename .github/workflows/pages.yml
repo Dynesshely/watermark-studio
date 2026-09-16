@@ -1,0 +1,67 @@
+# 构建并发布到 GitHub Pages
+#
+# 一次性前置条件：仓库 Settings → Pages → Build and deployment → Source 选「GitHub Actions」。
+# （用「Deploy from a branch」也行，但那样要自己维护 gh-pages 分支，且 Pages 的
+#   base 处理容易踩坑；官方 artifact 流程不需要额外分支。）
+#
+# 站点地址：https://<user>.github.io/<repo>/  —— 项目站点挂在子路径下，
+# 因此这里用 `pnpm build:pages`（= `vite build --base=./`）产出**相对路径**的产物：
+# 子路径、自定义域名（Settings → Pages → Custom domain）与本地任意静态服务器都成立。
+#
+# 想「测试不过就不部署」的话，把下面 build job 的触发方式换成一次 workflow_run：
+#   on:
+#     workflow_run:
+#       workflows: [CI]
+#       types: [completed]
+#       branches: [main]
+# 再在 job 上加 if: ${{ github.event.workflow_run.conclusion == 'success' }}。
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 部署不能并发：新的一次等旧的发布完（cancel-in-progress: false），
+# 否则可能出现「旧产物覆盖新产物」
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: 构建 Pages 产物
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:pages
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: 发布
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

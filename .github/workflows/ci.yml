@@ -1,0 +1,90 @@
+# 持续集成：类型检查 + 生产构建 + 真浏览器冒烟
+#
+# 三个 job 各管一件事：
+#   * build —— `pnpm build`（tsc --noEmit + vite build）与 `pnpm build:pages`
+#     （相对 base 的 Pages 产物）都必须能构建，产物作为 artifact 留档，便于手工部署；
+#   * smoke —— 用真实 Chromium 跑 e2e/smoke.mjs 的 77 项检查。它需要一个正在跑的站点，
+#     这里用 `vite preview` 起一个（job 结束即回收，不依赖任何外部服务）；
+#   * 失败时把 e2e/artifacts 里的截图传上来，便于对照界面回归。
+#
+# 这条工作流**不**部署；部署在 pages.yml。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支上新的推送取消旧的一次：省额度，也避免拿到过时的结果
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 类型检查与构建
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      # 版本来自 package.json 的 packageManager 字段，不在工作流里重复写死
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm build:pages
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
+  smoke:
+    name: 真浏览器冒烟
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm build
+
+      - name: 启动预览服务器
+        run: |
+          pnpm exec vite preview --port 4173 --strictPort > preview.log 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:4173/ > /dev/null; then
+              echo "预览服务器已就绪"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "预览服务器 60 秒内未就绪，日志如下："
+          cat preview.log
+          exit 1
+
+      - name: 冒烟测试（真实 Chromium）
+        run: node e2e/smoke.mjs http://127.0.0.1:4173
+
+      - name: 失败时上传截图产物
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-artifacts
+          path: e2e/artifacts
+          retention-days: 7

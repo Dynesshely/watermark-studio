@@ -205,6 +205,38 @@ i18n 与主题、弹窗焦点陷阱等。断言尽量落在**几何与像素**�
   （`[data-testid="x"]:visible`）乃至 README 里引用它的那句话当成候选类名，
   产出非法 CSS、触发构建告警，还会让同一份源码随文档改动构建出不同的产物。
 
+## 部署（GitHub Pages）
+
+仓库自带两条工作流，都在 `.github/workflows/`：
+
+| 工作流 | 触发 | 做什么 |
+| --- | --- | --- |
+| `ci.yml` | push 到 `main`、任何 PR、手动 | `pnpm build` 与 `pnpm build:pages` 各构建一遍，再用**真实 Chromium** 跑 `e2e/smoke.mjs`；失败时上传 `e2e/artifacts` 里的截图 |
+| `pages.yml` | push 到 `main`、手动 | `pnpm build:pages` → 上传 Pages 产物 → 发布到 `https://<user>.github.io/<repo>/` |
+
+需要在仓库里做一次设置：**Settings → Pages → Build and deployment → Source 选「GitHub Actions」**。
+（选「Deploy from a branch」就需要自己维护 `gh-pages` 分支，官方 artifact 流程不用。）
+CI 里的 pnpm 版本取自 `package.json` 的 `packageManager` 字段，不在工作流里重复写死。
+
+**为什么用相对 base**：Pages 的项目站点挂在 `/<repo>/` 子路径下，而 `--base=./` 产出的资源引用是相对的
+（`./assets/index-xxx.js`）—— 子路径、绑定的自定义域名、以及本地任意静态服务器都成立。
+因此本文件不写死 `base`：本地 `dev` / `build` / `preview` 继续从 `/` 提供资源，只有 Pages 构建走
+`pnpm build:pages`。
+
+本地验证 Pages 产物：
+
+```bash
+pnpm build:pages
+grep -n 'assets/' dist/index.html      # 应看到 ./assets/... 而不是 /assets/...
+pnpm exec vite preview                 # 相对路径在根路径下同样能跑
+```
+
+冒烟脚本接受任意 baseURL，所以部署之后也可以拿它复验线上站点（脚本只在本地读写，不会改动线上数据）：
+
+```bash
+node e2e/smoke.mjs https://<user>.github.io/<repo>/
+```
+
 ## 已知边界
 
 - 导出为重新编码，**EXIF 等元数据不会保留**（浏览器安全限制，界面会提示）；

@@ -1,12 +1,14 @@
 {
   "name": "watermark-studio",
   "private": true,
+  "packageManager": "pnpm@11.25.0",
   "version": "0.3.0",
   "type": "module",
   "description": "纯浏览器端图片水印工具：文字/颜色/透明度/间距/角度自定义，平铺与单次两种模式，批量导出与 ZIP 打包",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 50011",
     "build": "tsc --noEmit && vite build",
+    "build:pages": "tsc --noEmit && vite build --base=./",
     "preview": "vite preview"
   },
   "dependencies": {
