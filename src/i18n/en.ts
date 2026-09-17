@@ -16,6 +16,7 @@ export const en: Dict = {
 
   /* Top bar */
   'topbar.about': 'About Watermark Studio',
+  'topbar.github': 'Source repository (GitHub)',
   'topbar.privacyBadge': 'Images never leave your device',
   'topbar.paste': 'Paste image',
   'topbar.pasteTitle': 'Read an image from the clipboard (Ctrl+V works too)',

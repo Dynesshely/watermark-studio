@@ -14,6 +14,7 @@ export const zh = {
 
   /* 顶栏 */
   'topbar.about': '关于 水印工坊',
+  'topbar.github': '源码仓库（GitHub）',
   'topbar.privacyBadge': '图片不上传服务器',
   'topbar.paste': '粘贴图片',
   'topbar.pasteTitle': '读取剪贴板中的图片（Ctrl+V 亦可）',

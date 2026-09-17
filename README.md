@@ -72,6 +72,7 @@
 
 - **中英双语**，顶栏一键切换；切换时同步 `<html lang>`、页面标题与描述，选择随设置持久化；
 - **深浅主题**：跟随系统 / 亮 / 暗；
+- 顶栏语言控件**左侧**是 GitHub 图标：新窗口打开本仓库（地址由 `package.json` 的 `repository` 在构建期注入，单一来源）；
 - 点顶栏品牌区打开「**关于**」面板：版本号（构建期从 `package.json` 注入）、核心能力、快捷键表、规格与隐私说明；
 - 弹窗支持 `Esc` 关闭与**焦点循环**（`Tab` 不会跑到弹窗外面去），待命界面整卡可键盘操作。
 
@@ -188,7 +189,7 @@ src/
 测试脚本用真实 Chromium 跑，不依赖测试框架（只用到 `playwright` + Node 内置模块）：
 
 ```bash
-node e2e/smoke.mjs        # 77 项检查：核心链路（需 dev 或 preview 已在跑）
+node e2e/smoke.mjs        # 82 项检查：核心链路（需 dev 或 preview 已在跑）
 node e2e/logo-shot.mjs    # 品牌区 / LOGO / 关于弹窗截图
 node e2e/i18n-shot.mjs    # 英文界面截图（英文文案更长，重点看溢出与截断）
 ```
@@ -277,4 +278,5 @@ node e2e/smoke.mjs https://<user>.github.io/<repo>/
 | [Tailwind CSS v4](https://tailwindcss.com) | 样式（无组件库，控件手写） | MIT |
 | [jszip](https://github.com/Stuk/jszip) | ZIP 打包（批量导出与预设导出共用） | MIT 或 GPLv3（双许可） |
 | [Playwright](https://playwright.dev) | 端到端冒烟测试（开发依赖） | Apache-2.0 |
+| [Simple Icons](https://simpleicons.org) | 顶栏 GitHub 图标的官方路径数据 | CC0-1.0 |
 

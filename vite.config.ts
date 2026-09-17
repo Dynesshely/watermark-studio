@@ -22,6 +22,10 @@ export default defineConfig({
   // 应用版本单一来源：package.json（供「关于」弹窗等界面读取）
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    // 顶栏的源码入口用它；来源是 package.json 的 repository（与 git remote 一致）
+    __REPO_URL__: JSON.stringify(
+      pkg.repository.url.replace(/^git\+/, '').replace(/\.git$/, ''),
+    ),
   },
   plugins: [react(), tailwindcss()],
   server: {

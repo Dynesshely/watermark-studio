@@ -136,6 +136,35 @@ try {
   await page.waitForTimeout(250)
   check('切回中文生效', (await page.getByText(/把图片拖到这里/).count()) > 0)
 
+  console.log('· 顶栏 GitHub 入口')
+  const gh = page.locator('[data-testid="github-link"]')
+  check('顶栏存在 GitHub 链接', (await gh.count()) === 1)
+  check(
+    '链接指向远端仓库且新窗口打开',
+    (await gh.getAttribute('href')) === 'https://github.com/Dynesshely/watermark-studio' &&
+      (await gh.getAttribute('target')) === '_blank' &&
+      ((await gh.getAttribute('rel')) ?? '').includes('noopener'),
+    `${await gh.getAttribute('href')} target=${await gh.getAttribute('target')}`,
+  )
+  // 图标是实心路径（fill=currentColor），不是描边图标
+  check(
+    '链接内是实心 GitHub 图标',
+    (await gh.locator('svg path').first().getAttribute('fill')) === 'currentColor',
+  )
+  const ghBox = await gh.boundingBox()
+  // 顶栏里第一个 tablist 就是语言控件（其后是主题控件）
+  const langBox = await page.locator('[role="tablist"]').first().boundingBox()
+  check(
+    '链接位于 i18n 控件左侧（几何断言）',
+    !!ghBox && !!langBox && ghBox.x + ghBox.width <= langBox.x,
+    `github右缘=${ghBox ? (ghBox.x + ghBox.width).toFixed(1) : 'n/a'} 语言控件左缘=${langBox ? langBox.x.toFixed(1) : 'n/a'}`,
+  )
+  check(
+    '与 i18n 控件等高（同一排控件）',
+    !!ghBox && !!langBox && Math.abs(ghBox.height - langBox.height) <= 2,
+    `github高=${ghBox?.height.toFixed(1)} 语言控件高=${langBox?.height.toFixed(1)}`,
+  )
+
   console.log('· 品牌区交互与「关于」弹窗')
   const brand = page.getByRole('button', { name: /关于/ })
   const brandBox = await brand.boundingBox()

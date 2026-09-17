@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Lang, ThemePref } from '../lib/types'
 import { LANGS } from '../i18n'
+import { REPO_URL } from '../lib/links'
 import { useSettings } from '../store/settings'
 import { useI18n } from '../store/i18n'
 import { Icon, Segmented } from './ui'
@@ -47,6 +48,19 @@ export function TopBar() {
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
+        {/* 源码仓库：与语言/主题同一排，放置在最左侧（i18n 控件左边）。
+            高度与 Segmented 的 sm 档一致（容器 p-0.5 + 内部 h-6 = 28px = h-7） */}
+        <a
+          data-testid="github-link"
+          href={REPO_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={t('topbar.github')}
+          aria-label={t('topbar.github')}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-200/70 text-slate-500 transition-colors hover:bg-slate-300/70 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+        >
+          <Icon name="github" className="h-4 w-4" />
+        </a>
         {/* 界面语言 */}
         <Segmented<Lang>
           value={lang}
