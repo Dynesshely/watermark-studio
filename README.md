@@ -14,6 +14,10 @@
   <code>Canvas 2D</code>&nbsp; <code>jszip</code>
 </p>
 
+<p align="center">
+  <sub>许可 <a href="./LICENSE">AGPL-3.0-only</a> · 版权归 Dynesshely 所有</sub>
+</p>
+
 ---
 
 选好图片，调好文字、颜色、透明度、间距与角度，导出即可。所有计算都在你自己的浏览器里完成，
@@ -247,6 +251,23 @@ node e2e/smoke.mjs https://<user>.github.io/<repo>/
 - 超大图（单边 > 6000px 或超过 4000 万像素）全分辨率处理占内存较高，导入后会有提示；
 - 界面语言目前只有简体中文与 English 两套。
 
+## 许可
+
+本项目以 **[GNU Affero General Public License v3.0](./LICENSE)（AGPL-3.0，SPDX：`AGPL-3.0-only`）** 授权，
+版权归 Dynesshely 所有。`LICENSE` 是 GNU/SPDX 发布的**协议原文，未作任何改动**。
+
+用大白话说清它对你意味着什么：
+
+- **自己用、改、部署** —— 随便，包括商用；改完也不必公开；
+- **把改过的版本部署成给别人用的网络服务** —— 这时候 AGPL 的 §13 生效：必须让使用者能拿到
+  你那份修改版的完整对应源码（典型做法是在界面上放一个指向源码仓库的链接）；
+- **只是原样 fork 部署**（没改）—— 同样建议保留源码链接，成本极低；
+- **想闭源集成** —— 不行，需要另行取得商业授权（版权人保留这个选项）。
+
+依赖侧没有障碍：进产物的 React / React-DOM（MIT）与 JSZip（`MIT OR GPL-3.0-or-later`）都是宽松许可，
+与 AGPL 兼容；构建期的 Vite / Tailwind（MIT）、TypeScript / Playwright（Apache-2.0）不参与分发。
+产物里也保留了它们的版权声明（`dist` 中可见 `@license React …` 与 JSZip 的双许可横幅），无需额外的第三方声明文件。
+
 ## 第三方组件
 
 | 组件 | 用途 | 许可 |
@@ -257,4 +278,3 @@ node e2e/smoke.mjs https://<user>.github.io/<repo>/
 | [jszip](https://github.com/Stuk/jszip) | ZIP 打包（批量导出与预设导出共用） | MIT 或 GPLv3（双许可） |
 | [Playwright](https://playwright.dev) | 端到端冒烟测试（开发依赖） | Apache-2.0 |
 
-（本仓库目前尚未附带 LICENSE 文件。）
