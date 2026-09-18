@@ -1,0 +1,11 @@
+# 本地/服务器上用 compose 起这个静态站点：
+#   docker compose up -d --build
+# 镜像本身推送到 Harbor（见 image.push.ps1），服务器侧也可以直接用远端镜像。
+services:
+  watermark-studio:
+    build: .
+    image: watermark-studio:latest
+    container_name: watermark-studio
+    ports:
+      - "60011:60011"   # 容器内 = 本地 dev 端口 50011 + 10000
+    restart: unless-stopped

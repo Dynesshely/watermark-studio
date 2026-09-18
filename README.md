@@ -244,6 +244,34 @@ pnpm exec vite preview                 # 相对路径在根路径下同样能跑
 node e2e/smoke.mjs https://<user>.github.io/<repo>/
 ```
 
+## 容器部署（Docker + Caddy）
+
+仓库自带镜像配置：多阶段构建，产物交给 **Caddy** 托管（纯静态，镜像里没有后端）。
+
+| 文件 | 作用 |
+| --- | --- |
+| `Dockerfile` | `node:24-alpine` 装依赖并 `pnpm build` → `caddy:2-alpine`，只带 `dist/` 与 `Caddyfile` |
+| `Caddyfile` | 监听 **60011**（= 本地 dev 端口 50011 + 10000）；`encode zstd gzip`；`/assets/*` 强缓存（文件名带内容哈希），入口 HTML 与 favicon `no-cache`；日志走 stdout |
+| `.dockerignore` | 排除 `node_modules` / `dist` / `e2e` / `.git` / 文档，构建上下文只剩源码 |
+| `docker-compose.yml` | `docker compose up -d --build`，端口映射 `60011:60011` |
+| `image.build.ps1` / `image.push.ps1` | 与其它项目同款：打 `latest` 标签并推送到 Harbor |
+
+```bash
+docker build -t watermark-studio:latest .
+docker run --rm -p 60011:60011 watermark-studio:latest   # → http://127.0.0.1:60011/
+docker compose up -d --build                             # 或者用 compose
+```
+
+推送到 Harbor（项目 `dynecloud`）：
+
+```bash
+docker tag watermark-studio:latest registry.services.nimatattic.net/dynecloud/watermark-studio:latest
+docker push registry.services.nimatattic.net/dynecloud/watermark-studio:latest
+```
+
+PowerShell 下等价于直接跑 `./image.build.ps1` 与 `./image.push.ps1`。
+镜像里用的是**根路径** base（`pnpm build`），与 GitHub Pages 那条相对 base（`pnpm build:pages`）互不影响。
+
 ## 已知边界
 
 - 导出为重新编码，**EXIF 等元数据不会保留**（浏览器安全限制，界面会提示）；

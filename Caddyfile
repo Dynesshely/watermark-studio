@@ -1,0 +1,33 @@
+# 水印工坊 —— 纯静态站点，镜像里由 Caddy 直接托管（没有后端、没有 API）
+#
+# 端口：容器内监听 60011（= 本地 dev 端口 50011 + 10000），TLS 由外层的反向代理终结
+:60011 {
+	root * /srv/www
+
+	# 预压缩：zstd 优先，浏览器不支持时回落 gzip
+	encode zstd gzip
+
+	file_server
+
+	# Vite 产物文件名带内容哈希 → 可以长期强缓存
+	@hashed path /assets/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+	# 入口 HTML 与 favicon 必须每次回源校验：
+	# 否则发版后用户会拿着旧壳去请求已经删掉的旧哈希资源，直接白屏
+	@entry path / /index.html /favicon.svg
+	header @entry Cache-Control "no-cache"
+
+	# 静态站点用不到这几个头，去掉能少暴露一点信息
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# 日志走 stdout，交给容器运行时收集（systemd / docker logs）
+	log {
+		output stdout
+		format console
+	}
+}

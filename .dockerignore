@@ -1,0 +1,23 @@
+# 依赖与产物：镜像里由 `pnpm install` 与 `pnpm build` 重新生成
+node_modules
+dist
+
+# 测试与截图产物：与镜像无关，进上下文只会拖慢构建
+e2e/artifacts
+e2e
+.github
+
+# 版本控制与本地环境
+.git
+.gitignore
+.env.local
+.env.*.local
+
+# 文档
+*.md
+LICENSE
+
+# 系统与日志
+.DS_Store
+Thumbs.db
+*.log
